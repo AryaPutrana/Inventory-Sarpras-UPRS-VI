@@ -1,0 +1,151 @@
+========================================
+QUICK START - SISTEM INVENTORY SARPRAS
+========================================
+
+🔐 SISTEM SEKARANG MEMILIKI LOGIN!
+
+KREDENSIAL DEFAULT:
+Email    : petugas@sarpras.com
+Password : password123
+
+========================================
+
+LANGKAH CEPAT UNTUK MEMULAI:
+
+1. JALANKAN LARAGON
+   - Buka aplikasi Laragon
+   - Klik "Start All"
+   - Tunggu hingga MySQL dan Apache berjalan (hijau)
+
+2. BUAT DATABASE
+   Buka Terminal/Command Prompt, jalankan:
+   
+   mysql -u root -p
+   (tekan Enter saat diminta password)
+   
+   CREATE DATABASE sistem_inventory_uprs_vi;
+   exit;
+
+   ATAU via phpMyAdmin:
+   - Klik "Database" di Laragon
+   - Buat database: sistem_inventory_uprs_vi
+
+3. SETUP DATABASE
+   Di terminal project ini, jalankan:
+   
+   php artisan config:clear
+   php artisan migrate:fresh
+   php artisan db:seed
+
+   Seeder akan membuat:
+   ✅ 1 User: petugas@sarpras.com (password: password123)
+   ✅ 6 Data Rusun: RABEK, UMEN, TIPAR, ALBO, CBT, KM2
+
+4. JALANKAN SERVER
+   
+   php artisan serve
+
+5. BUKA BROWSER
+   
+   http://127.0.0.1:8000
+
+6. LOGIN
+   Email: petugas@sarpras.com
+   Password: password123
+
+========================================
+TESTING AWAL
+========================================
+
+A. Login
+   - Masukkan email: petugas@sarpras.com
+   - Masukkan password: password123
+   - Klik Login
+   - ✅ Masuk ke Dashboard
+
+B. Tambah Barang Pertama
+   - Klik "Inventory Barang"
+   - Klik "Tambah Barang"
+   - Isi data dan upload foto
+   - Simpan
+
+C. Buat Pengambilan
+   - Klik "Pengambilan Barang"
+   - Klik "Pengambilan Baru"
+   - Pilih barang, isi data
+   - Perhatikan stok berkurang otomatis
+
+D. Lihat Laporan
+   - Klik "Laporan"
+   - Pilih tanggal
+   - Klik "Tampilkan Laporan"
+   - Coba Export PDF/Excel
+
+E. Logout
+   - Klik tombol "Logout" di navbar
+   - Kembali ke halaman login
+
+========================================
+TROUBLESHOOTING
+========================================
+
+ERROR: Connection Refused
+→ Laragon belum jalan, Start Laragon dulu
+
+ERROR: Database not found
+→ Buat database: sistem_inventory_uprs_vi
+
+ERROR: Table not found
+→ php artisan migrate:fresh
+→ php artisan db:seed
+
+ERROR: Login gagal
+→ Cek email: petugas@sarpras.com
+→ Cek password: password123
+→ Pastikan seeder sudah jalan
+
+Foto tidak muncul
+→ php artisan storage:link
+
+Tidak bisa akses dashboard
+→ Login dulu di /login
+
+========================================
+FITUR BARU: SISTEM LOGIN
+========================================
+
+✅ Halaman login modern dengan gradient
+✅ 1 User default sudah dibuat otomatis
+✅ Semua halaman dilindungi (harus login)
+✅ Navbar menampilkan nama user
+✅ Tombol logout di navbar
+✅ Remember me functionality
+✅ Session management
+
+========================================
+FILE DOKUMENTASI
+========================================
+
+QUICK_START.txt              → Panduan ini (cepat)
+UPDATE_LOGIN.md              → Dokumentasi sistem login
+PANDUAN_INSTALASI_LENGKAP.md → Panduan detail lengkap
+VERIFIKASI_SISTEM.md         → Checklist semua fitur
+README_PROJECT.md            → Dokumentasi project
+PRD.md                       → Requirement lengkap
+
+========================================
+SELESAI!
+========================================
+
+Jika semua berjalan lancar:
+1. ✅ Database terkoneksi
+2. ✅ User default sudah dibuat
+3. ✅ 6 Rusun sudah terisi
+4. ✅ Bisa login ke sistem
+5. ✅ Semua fitur berjalan sempurna
+
+Sistem siap digunakan!
+
+Untuk detail lengkap, baca:
+- UPDATE_LOGIN.md (info login)
+- PANDUAN_INSTALASI_LENGKAP.md (instalasi detail)

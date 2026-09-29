@@ -1,0 +1,121 @@
+===============================================
+LANGKAH SETUP SISTEM INVENTORY SARPRAS UPRS VI
+===============================================
+
+STATUS SAAT INI:
+✅ PHP 8.1.10 - READY
+✅ Laravel Project Files - READY
+✅ Application Key - GENERATED
+❌ MySQL/MariaDB - BELUM RUNNING
+❌ Database - BELUM DIBUAT
+
+===============================================
+LANGKAH YANG HARUS ANDA LAKUKAN:
+===============================================
+
+LANGKAH 1: START MySQL/MariaDB
+-------------------------------
+
+** JIKA MENGGUNAKAN LARAGON: **
+1. Buka Laragon (icon di desktop atau Start Menu)
+2. Klik tombol "Start All" 
+3. Tunggu hingga Apache dan MySQL berwarna hijau
+4. MySQL akan running di port 3306
+
+** JIKA MENGGUNAKAN XAMPP: **
+1. Buka XAMPP Control Panel
+2. Klik tombol "Start" pada MySQL
+3. Tunggu hingga status hijau
+4. MySQL akan running di port 3306
+
+** JIKA MENGGUNAKAN WAMP: **
+1. Buka WAMP
+2. Klik icon WAMP di system tray
+3. Start All Services
+4. Tunggu hingga icon berwarna hijau
+
+LANGKAH 2: BUAT DATABASE
+-------------------------
+
+** CARA 1 - Menggunakan phpMyAdmin (MUDAH): **
+1. Buka browser
+2. Akses: http://localhost/phpmyadmin
+3. Klik tab "Databases" atau "Basis Data"
+4. Di kolom "Create database":
+   - Nama database: sistem_inventory_uprs_vi
+   - Collation: utf8mb4_unicode_ci
+5. Klik tombol "Create" atau "Buat"
+6. Database berhasil dibuat!
+
+** CARA 2 - Menggunakan MySQL Command Line: **
+1. Buka Command Prompt atau Terminal
+2. Ketik: mysql -u root -p
+3. Tekan Enter (jika diminta password, masukkan password MySQL Anda)
+4. Ketik: CREATE DATABASE sistem_inventory_uprs_vi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+5. Ketik: EXIT;
+6. Database berhasil dibuat!
+
+** CARA 3 - Menggunakan Laragon: **
+1. Klik kanan icon Laragon di system tray
+2. Pilih MySQL → Create Database
+3. Masukkan nama: sistem_inventory_uprs_vi
+4. Klik OK
+5. Database berhasil dibuat!
+
+LANGKAH 3: JALANKAN SETUP SISTEM
+---------------------------------
+
+Setelah MySQL running dan database dibuat, double-click file:
+   
+   setup.bat
+
+Atau jalankan manual di Command Prompt:
+
+   cd C:\Laravel\Sistem_Inventory_UPRS_VI
+   php artisan migrate --seed
+   php artisan storage:link
+   php artisan serve
+
+LANGKAH 4: AKSES APLIKASI
+--------------------------
+
+Buka browser dan akses:
+   http://localhost:8000
+
+Anda akan melihat Dashboard Sistem Inventory Sarpras!
+
+===============================================
+TROUBLESHOOTING
+===============================================
+
+MASALAH: MySQL tidak bisa start
+SOLUSI: 
+- Pastikan tidak ada aplikasi lain yang menggunakan port 3306
+- Restart Laragon/XAMPP/WAMP
+- Reboot komputer jika perlu
+
+MASALAH: Error "Access denied for user 'root'"
+SOLUSI:
+- Edit file .env
+- Ubah DB_PASSWORD= menjadi password MySQL Anda
+- Jika tidak ada password, biarkan kosong: DB_PASSWORD=
+
+MASALAH: phpMyAdmin tidak bisa diakses
+SOLUSI:
+- Pastikan Apache juga sudah running
+- Akses http://localhost atau http://127.0.0.1
+- Cek apakah ada error di log Laragon/XAMPP
+
+MASALAH: Port 8000 sudah digunakan
+SOLUSI:
+- Gunakan port lain: php artisan serve --port=8001
+- Akses: http://localhost:8001
+
+===============================================
+KONTAK & BANTUAN
+===============================================
+
+Jika ada masalah, screenshot error dan tanyakan!
+
+File ini dibuat: 29 September 2026
+===============================================

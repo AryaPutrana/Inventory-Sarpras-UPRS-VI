@@ -1,0 +1,63 @@
+╔════════════════════════════════════════════════════════════════╗
+║        SISTEM INVENTORY SARPRAS UPRS VI - QUICK START          ║
+╚════════════════════════════════════════════════════════════════╝
+
+📌 UNTUK MEMULAI SETUP:
+
+1. Buka file: PANDUAN_VISUAL.html (double-click)
+   → Panduan lengkap dengan tampilan visual
+
+2. ATAU jalankan: setup-complete.bat (double-click)
+   → Setup otomatis, ikuti instruksi di layar
+
+3. ATAU baca: LANGKAH_SETUP.txt
+   → Panduan text step-by-step
+
+═══════════════════════════════════════════════════════════════
+
+⚡ QUICK SETUP (Jika MySQL sudah running):
+
+1. Double-click: setup-complete.bat
+2. Tunggu proses selesai
+3. Jalankan: php artisan serve
+4. Buka: http://localhost:8000
+
+═══════════════════════════════════════════════════════════════
+
+📋 CHECKLIST SEBELUM SETUP:
+
+☐ MySQL/MariaDB sudah running (Laragon/XAMPP/WAMP)
+☐ Database "sistem_inventory_uprs_vi" sudah dibuat
+☐ PHP 8.1+ sudah terinstall
+☐ Composer sudah terinstall
+
+═══════════════════════════════════════════════════════════════
+
+🎯 FITUR SISTEM:
+
+✓ Dashboard dengan statistik lengkap
+✓ Inventory barang dengan upload foto
+✓ Pengambilan barang dengan validasi stok
+✓ Laporan dengan filter tanggal & rusun
+✓ Export PDF & Excel
+✓ Responsive design (Desktop, Tablet, Mobile)
+
+═══════════════════════════════════════════════════════════════
+
+📞 BANTUAN:
+
+Jika ada masalah saat setup, buka file:
+- LANGKAH_SETUP.txt → Troubleshooting lengkap
+- SETUP_PANDUAN.md → Dokumentasi detail
+- FILE_CHECKLIST.md → Daftar file & fitur
+
+═══════════════════════════════════════════════════════════════
+
+🚀 STATUS PROJECT: READY TO DEPLOY
+
+Semua file sudah dibuat dan siap digunakan!
+Tinggal setup database dan jalankan.
+
+═══════════════════════════════════════════════════════════════
+
+Created: 29 September 2026

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panduan Setup - SI Inventory Sarpras UPRS VI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .content {
+            padding: 40px;
+        }
+        .status-box {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+        .status-box.success {
+            border-left-color: #27ae60;
+            background: #d4edda;
+        }
+        .status-box.warning {
+            border-left-color: #f39c12;
+            background: #fff3cd;
+        }
+        .status-box.error {
+            border-left-color: #e74c3c;
+            background: #f8d7da;
+        }
+        .step {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        .step h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .step-number {
+            background: #3498db;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        .step-content {
+            margin-left: 50px;
+        }
+        .code-box {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .button {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin: 10px 10px 10px 0;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .button.success {
+            background: #27ae60;
+        }
+        .button.success:hover {
+            background: #229954;
+        }
+        .checklist {
+            list-style: none;
+            margin: 15px 0;
+        }
+        .checklist li {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #3498db;
+        }
+        .checklist li:before {
+            content: "✓ ";
+            color: #27ae60;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .alert {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .option-box {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+        .option-box h4 {
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+        ol {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 Sistem Inventory Sarpras UPRS VI</h1>
+            <p>Panduan Setup & Instalasi</p>
+            <p style="font-size: 12px; margin-top: 10px;">Tanggal: 29 September 2026</p>
+        </div>
+
+        <div class="content">
+            <div class="status-box warning">
+                <h3>⚠️ Status Setup Saat Ini</h3>
+                <ul class="checklist">
+                    <li>PHP 8.1.10 sudah terinstall</li>
+                    <li>Laravel Project sudah dibuat</li>
+                    <li>Application Key sudah di-generate</li>
+                </ul>
+                <p style="margin-top: 15px; font-weight: bold;">❌ Yang masih perlu dilakukan: Start MySQL dan Setup Database</p>
+            </div>
+
+            <!-- STEP 1 -->
+            <div class="step">
+                <h3><span class="step-number">1</span> Start MySQL/MariaDB</h3>
+                <div class="step-content">
+                    <p><strong>Pilih sesuai software yang Anda gunakan:</strong></p>
+                    
+                    <div class="option-box">
+                        <h4>📦 LARAGON (Recommended)</h4>
+                        <ol>
+                            <li>Buka aplikasi Laragon (icon di desktop)</li>
+                            <li>Klik tombol <strong>"Start All"</strong></li>
+                            <li>Tunggu hingga Apache & MySQL berwarna <span style="color: green;">hijau</span></li>
+                            <li>MySQL akan running di port 3306</li>
+                        </ol>
+                    </div>
+
+                    <div class="option-box">
+                        <h4>🔶 XAMPP</h4>
+                        <ol>
+                            <li>Buka XAMPP Control Panel</li>
+                            <li>Klik tombol "Start" pada baris MySQL</li>
+                            <li>Tunggu hingga status berubah menjadi hijau</li>
+                        </ol>
+                    </div>
+
+                    <div class="option-box">
+                        <h4>🟨 WAMP</h4>
+                        <ol>
+                            <li>Klik icon WAMP di system tray</li>
+                            <li>Pilih "Start All Services"</li>
+                            <li>Tunggu hingga icon berwarna hijau</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div class="step">
+                <h3><span class="step-number">2</span> Buat Database</h3>
+                <div class="step-content">
+                    <p><strong>Pilih salah satu cara:</strong></p>
+                    
+                    <div class="option-box">
+                        <h4>🌐 Cara 1: Menggunakan phpMyAdmin (PALING MUDAH)</h4>
+                        <ol>
+                            <li>Buka browser</li>
+                            <li>Akses: <a href="http://localhost/phpmyadmin" target="_blank" class="button">http://localhost/phpmyadmin</a></li>
+                            <li>Klik tab <strong>"Databases"</strong> atau <strong>"Basis Data"</strong></li>
+                            <li>Di kolom "Create database", masukkan nama:</li>
+                        </ol>
+                        <div class="code-box">sistem_inventory_uprs_vi</div>
+                        <ol start="5">
+                            <li>Pilih Collation: <strong>utf8mb4_unicode_ci</strong></li>
+                            <li>Klik tombol <strong>"Create"</strong> atau <strong>"Buat"</strong></li>
+                        </ol>
+                    </div>
+
+                    <div class="option-box">
+                        <h4>⌨️ Cara 2: MySQL Command Line</h4>
+                        <div class="code-box">
+mysql -u root -p<br>
+CREATE DATABASE sistem_inventory_uprs_vi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;<br>
+EXIT;
+                        </div>
+                    </div>
+
+                    <div class="option-box">
+                        <h4>📦 Cara 3: Laragon (Quick)</h4>
+                        <ol>
+                            <li>Klik kanan icon Laragon di system tray</li>
+                            <li>MySQL → Create Database</li>
+                            <li>Nama: <strong>sistem_inventory_uprs_vi</strong></li>
+                            <li>Klik OK</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="step">
+                <h3><span class="step-number">3</span> Jalankan Setup Otomatis</h3>
+                <div class="step-content">
+                    <p>Setelah MySQL running dan database dibuat:</p>
+                    <div class="alert alert-info">
+                        <strong>📁 Double-click file ini di folder project:</strong>
+                        <div class="code-box">setup-complete.bat</div>
+                    </div>
+                    <p>Script akan otomatis:</p>
+                    <ul class="checklist">
+                        <li>Cek koneksi MySQL</li>
+                        <li>Setup environment (.env)</li>
+                        <li>Generate application key</li>
+                        <li>Buat storage link</li>
+                        <li>Jalankan migration (buat tabel)</li>
+                        <li>Isi data rusun (6 data)</li>
+                        <li>Clear cache</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- STEP 4 -->
+            <div class="step">
+                <h3><span class="step-number">4</span> Jalankan Aplikasi</h3>
+                <div class="step-content">
+                    <p>Setelah setup selesai, jalankan server:</p>
+                    <div class="code-box">
+cd C:\Laravel\Sistem_Inventory_UPRS_VI<br>
+php artisan serve
+                    </div>
+                    <p style="margin: 20px 0;">Kemudian buka browser dan akses:</p>
+                    <a href="http://localhost:8000" target="_blank" class="button success" style="font-size: 18px;">
+                        🚀 http://localhost:8000
+                    </a>
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>⚠️ TROUBLESHOOTING:</strong>
+                <ul style="margin-top: 10px; line-height: 1.8;">
+                    <li><strong>Error "Access denied"</strong> → Edit .env, ubah DB_PASSWORD sesuai password MySQL Anda</li>
+                    <li><strong>Error "Unknown database"</strong> → Database belum dibuat, ulangi Step 2</li>
+                    <li><strong>Port 8000 sudah digunakan</strong> → Gunakan: php artisan serve --port=8001</li>
+                    <li><strong>Foto tidak muncul</strong> → Jalankan: php artisan storage:link</li>
+                </ul>
+            </div>
+
+            <div class="status-box success">
+                <h3>✅ Setelah Setup Berhasil</h3>
+                <p>Anda bisa langsung menggunakan sistem untuk:</p>
+                <ul class="checklist">
+                    <li>Mengelola inventory barang dengan foto</li>
+                    <li>Mencatat pengambilan barang</li>
+                    <li>Membuat laporan berdasarkan tanggal & rusun</li>
+                    <li>Export laporan ke PDF dan Excel</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <h3>📚 File Dokumentasi Lainnya:</h3>
+                <p style="margin: 15px 0;">
+                    <strong>LANGKAH_SETUP.txt</strong> - Panduan text detail<br>
+                    <strong>SETUP_PANDUAN.md</strong> - Panduan markdown lengkap<br>
+                    <strong>FILE_CHECKLIST.md</strong> - Daftar semua file & fitur
+                </p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Sistem Informasi Inventory Material Sarana dan Prasarana</p>
+            <p>UNIT PENGELOLA RUMAH SUSUN VI</p>
+            <p style="margin-top: 10px; font-size: 12px; opacity: 0.8;">Dibuat dengan ❤️ untuk UPRS VI</p>
+        </div>
+    </div>
+</body>
+</html>

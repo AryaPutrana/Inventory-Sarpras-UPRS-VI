@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Checklist - SI Inventory Sarpras</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .progress-bar {
+            background: rgba(255,255,255,0.2);
+            height: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: #27ae60;
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .content {
+            padding: 30px;
+        }
+        .checklist-item {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #3498db;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .checklist-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .checklist-item.completed {
+            border-left-color: #27ae60;
+            background: #d4edda;
+        }
+        .checklist-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .checkbox {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #3498db;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+        .completed .checkbox {
+            background: #27ae60;
+            border-color: #27ae60;
+        }
+        .checkbox::after {
+            content: '✓';
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            display: none;
+        }
+        .completed .checkbox::after {
+            display: block;
+        }
+        .item-title {
+            font-weight: bold;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        .item-desc {
+            margin-top: 10px;
+            color: #666;
+            line-height: 1.6;
+            padding-left: 45px;
+        }
+        .completed .item-title {
+            color: #27ae60;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        .completion-message {
+            display: none;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .completion-message.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .button {
+            display: inline-block;
+            background: white;
+            color: #27ae60;
+            padding: 15px 30px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Setup Checklist</h1>
+            <p>Sistem Inventory Sarpras UPRS VI</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number" id="completedCount">0</div>
+                    <div class="stat-label">Selesai</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="totalCount">6</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="percentCount">0%</div>
+                    <div class="stat-label">Progress</div>
+                </div>
+            </div>
+
+            <div class="checklist-item" onclick="toggleItem(this)">
+                <div class="checklist-header">
+                    <div class="checkbox"></div>
+                    <div class="item-title">1. MySQL/MariaDB Running</div>
+                </div>
+                <div class="item-desc">
+                    Start MySQL menggunakan Laragon/XAMPP/WAMP. Pastikan status hijau/running.
+                </div>
+            </div>
+
+            <div class="checklist-item" onclick="toggleItem(this)">
+                <div class="checklist-header">
+                    <div class="checkbox"></div>
+                    <div class="item-title">2. Database Dibuat</div>
+                </div>
+                <div class="item-desc">
+                    Buat database "sistem_inventory_uprs_vi" via phpMyAdmin atau MySQL command line.
+                </div>
+            </div>
+
+            <div class="checklist-item" onclick="toggleItem(this)">
+                <div class="checklist-header">
+                    <div class="checkbox"></div>
+                    <div class="item-title">3. File .env Dikonfigurasi</div>
+                </div>
+                <div class="item-desc">
+                    Pastikan file .env ada dan DB_DATABASE sudah benar (sistem_inventory_uprs_vi).
+                </div>
+            </div>
+
+            <div class="checklist-item" onclick="toggleItem(this)">
+                <div class="checklist-header">
+                    <div class="checkbox"></div>
+                    <div class="item-title">4. Setup Script Dijalankan</div>
+                </div>
+                <div class="item-desc">
+                    Jalankan "setup-complete.bat" dan tunggu hingga selesai tanpa error.
+                </div>
+            </div>
+
+            <div class="checklist-item" onclick="toggleItem(this)">
+                <div class="checklist-header">
+                    <div class="checkbox"></div>
+                    <div class="item-title">5. Server Laravel Berjalan</div>
+                </div>
+                <div class="item-desc">
+                    Jalankan "php artisan serve" dan server aktif di http://localhost:8000
+                </div>
+            </div>
+
+            <div class="checklist-item" onclick="toggleItem(this)">
+                <div class="checklist-header">
+                    <div class="checkbox"></div>
+                    <div class="item-title">6. Sistem Bisa Diakses</div>
+                </div>
+                <div class="item-desc">
+                    Buka browser ke http://localhost:8000 dan Dashboard muncul dengan benar.
+                </div>
+            </div>
+
+            <div class="completion-message" id="completionMessage">
+                <h2>🎉 SETUP SELESAI! 🎉</h2>
+                <p style="margin-top: 15px; font-size: 18px;">
+                    Sistem Inventory Sarpras UPRS VI sudah siap digunakan!
+                </p>
+                <a href="http://localhost:8000" class="button" target="_blank">
+                    🚀 Buka Aplikasi
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateStats() {
+            const items = document.querySelectorAll('.checklist-item');
+            const completed = document.querySelectorAll('.checklist-item.completed');
+            const total = items.length;
+            const completedCount = completed.length;
+            const percent = Math.round((completedCount / total) * 100);
+
+            document.getElementById('completedCount').textContent = completedCount;
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('percentCount').textContent = percent + '%';
+            document.getElementById('progressBar').style.width = percent + '%';
+
+            // Show completion message
+            if (completedCount === total) {
+                document.getElementById('completionMessage').classList.add('show');
+            } else {
+                document.getElementById('completionMessage').classList.remove('show');
+            }
+
+            // Save to localStorage
+            const states = Array.from(items).map(item => item.classList.contains('completed'));
+            localStorage.setItem('checklistStates', JSON.stringify(states));
+        }
+
+        function toggleItem(item) {
+            item.classList.toggle('completed');
+            updateStats();
+        }
+
+        // Load saved state
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('checklistStates');
+            if (saved) {
+                const states = JSON.parse(saved);
+                const items = document.querySelectorAll('.checklist-item');
+                states.forEach((completed, index) => {
+                    if (completed && items[index]) {
+                        items[index].classList.add('completed');
+                    }
+                });
+            }
+            updateStats();
+        });
+    </script>
+</body>
+</html>
