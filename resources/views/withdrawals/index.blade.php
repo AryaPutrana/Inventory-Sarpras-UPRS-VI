@@ -12,18 +12,28 @@
         </a>
     </div>
     <div class="card-body">
-        <!-- Search Form -->
+        <!-- Search & Filter Form -->
         <form method="GET" action="{{ route('withdrawals.index') }}" class="mb-3">
-            <div class="row">
-                <div class="col-md-6">
+            <div class="row g-2">
+                <div class="col-md-4">
                     <div class="input-group">
                         <input type="text" name="search" class="form-control" placeholder="Cari barang / pengambil..." value="{{ $search }}">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search"></i> Cari
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <input type="date" name="start_date" class="form-control" placeholder="Dari Tanggal" value="{{ $startDate }}">
+                </div>
+                <div class="col-md-3">
+                    <input type="date" name="end_date" class="form-control" placeholder="Sampai Tanggal" value="{{ $endDate }}">
+                </div>
+                <div class="col-md-2">
+                    <div class="d-flex gap-1">
+                        <button type="submit" class="btn btn-primary flex-fill">
+                            <i class="bi bi-search"></i> Filter
                         </button>
-                        @if($search)
+                        @if($search || $startDate || $endDate)
                         <a href="{{ route('withdrawals.index') }}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Reset
+                            <i class="bi bi-x-circle"></i>
                         </a>
                         @endif
                     </div>

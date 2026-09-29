@@ -16,6 +16,8 @@ class WithdrawalController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
         
         $withdrawals = Withdrawal::with(['item', 'rusun'])
             ->when($search, function($query) use ($search) {
@@ -25,10 +27,21 @@ class WithdrawalController extends Controller
                 })
                 ->orWhere('taken_by', 'like', "%{$search}%");
             })
+            ->when($startDate, function($query) use ($startDate) {
+                return $query->whereDate('taken_at', '>=', $startDate);
+            })
+            ->when($endDate, function($query) use ($endDate) {
+                return $query->whereDate('taken_at', '<=', $endDate);
+            })
             ->orderBy('taken_at', 'desc')
-            ->paginate(10);
+            ->paginate(10)
+            ->appends([
+                'search' => $search,
+                'start_date' => $startDate,
+                'end_date' => $endDate
+            ]);
 
-        return view('withdrawals.index', compact('withdrawals', 'search'));
+        return view('withdrawals.index', compact('withdrawals', 'search', 'startDate', 'endDate'));
     }
 
     /**

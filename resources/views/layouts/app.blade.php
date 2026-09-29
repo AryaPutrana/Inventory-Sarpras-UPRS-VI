@@ -24,7 +24,7 @@
             --danger: #ef4444;
             --warning: #f59e0b;
             --info: #3b82f6;
-            --dark: #1e293b;
+            --dark: #0026ff;
             --light: #f8fafc;
             --sidebar-width: 280px;
         }
@@ -130,7 +130,7 @@
         }
 
         .nav-link.active {
-            background: linear-gradient(135deg, var(--primary), #7c3aed);
+            background: linear-gradient(135deg, var(--primary), #9572d1);
             color: white;
             box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
         }
