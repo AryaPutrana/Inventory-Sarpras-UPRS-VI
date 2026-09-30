@@ -31,7 +31,7 @@
                         <button type="submit" class="btn btn-primary flex-fill">
                             <i class="bi bi-search"></i> Filter
                         </button>
-                        @if($search || $startDate || $endDate)
+                        @if(filled($search) || filled($startDate) || filled($endDate))
                         <a href="{{ route('withdrawals.index') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i>
                         </a>

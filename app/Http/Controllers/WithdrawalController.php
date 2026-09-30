@@ -142,19 +142,4 @@ class WithdrawalController extends Controller
         // Not implemented based on PRD
         abort(404);
     }
-
-    /**
-     * Get item details for AJAX request
-     */
-    public function getItemDetails($id)
-    {
-        $item = Item::findOrFail($id);
-        
-        return response()->json([
-            'item_code' => $item->item_code,
-            'unit_price' => $item->unit_price,
-            'stock' => $item->stock,
-            'unit' => $item->unit,
-        ]);
-    }
 }

@@ -27,7 +27,6 @@ Route::middleware('auth')->group(function () {
 
     // Withdrawals (Pengambilan Barang)
     Route::resource('withdrawals', WithdrawalController::class);
-    Route::get('/api/items/{id}', [WithdrawalController::class, 'getItemDetails'])->name('items.details');
 
     // Reports (Laporan)
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
