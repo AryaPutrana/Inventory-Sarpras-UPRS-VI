@@ -163,7 +163,13 @@ class ItemController extends Controller
     public function destroy(string $id)
     {
         $item = Item::findOrFail($id);
-        
+
+        // Cegah penghapusan bila barang punya riwayat pengambilan (histori laporan harus terjaga)
+        if ($item->withdrawals()->exists()) {
+            return redirect()->back()
+                ->with('error', 'Barang tidak dapat dihapus karena memiliki riwayat pengambilan.');
+        }
+
         // Hapus foto hanya jika tidak dipakai item lain (mis. default.jpg dipakai banyak barang)
         if ($item->photo) {
             $stillUsed = Item::where('photo', $item->photo)

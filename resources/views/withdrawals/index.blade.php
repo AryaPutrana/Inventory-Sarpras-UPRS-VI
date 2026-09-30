@@ -86,7 +86,7 @@
             </div>
         @else
             <p class="text-center text-muted py-4">
-                @if($search)
+                @if(filled($search))
                     Tidak ada data pengambilan yang ditemukan dengan kata kunci "{{ $search }}".
                 @else
                     Belum ada data pengambilan. Silakan buat pengambilan baru.

@@ -7,6 +7,7 @@ use Tests\TestCase;
 use App\Models\User;
 use App\Models\Item;
 use App\Models\Rusun;
+use App\Models\Withdrawal;
 
 class StockManagementTest extends TestCase
 {
@@ -149,5 +150,43 @@ class StockManagementTest extends TestCase
             'stock' => 15,
             'unit_price' => '1500.00',
         ]);
+    }
+
+    public function test_item_with_withdrawal_history_cannot_be_deleted(): void
+    {
+        $this->loginAsAdmin();
+
+        $rusun = $this->makeRusun();
+        $item = $this->makeItem(['photo' => 'delete-test.jpg']);
+
+        Withdrawal::create([
+            'item_id' => $item->id,
+            'rusun_id' => $rusun->id,
+            'taken_by' => 'Petugas A',
+            'quantity' => 1,
+            'unit_price' => '2000.00',
+            'subtotal' => '2000.00',
+            'taken_at' => now(),
+            'description' => null,
+        ]);
+
+        $response = $this->delete(route('items.destroy', $item->id));
+
+        $response->assertSessionHas('error');
+        $this->assertDatabaseHas('items', ['id' => $item->id]);
+        $this->assertDatabaseCount('withdrawals', 1);
+    }
+
+    public function test_item_without_withdrawal_history_can_be_deleted(): void
+    {
+        $this->loginAsAdmin();
+
+        $item = $this->makeItem(['photo' => 'delete-test.jpg']);
+
+        $response = $this->delete(route('items.destroy', $item->id));
+
+        $response->assertRedirect(route('items.index'));
+        $response->assertSessionHas('success');
+        $this->assertDatabaseMissing('items', ['id' => $item->id]);
     }
 }

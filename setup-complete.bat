@@ -16,7 +16,7 @@ echo.
 echo [STEP 1/7] Memeriksa koneksi MySQL...
 echo.
 
-php artisan db:monitor >nul 2>&1
+php -r "new PDO('mysql:host=127.0.0.1;port=3306','root','');" >nul 2>&1
 if errorlevel 1 (
     color 0C
     echo ❌ MYSQL BELUM RUNNING!
@@ -73,7 +73,7 @@ echo [STEP 3/7] Memeriksa file .env...
 echo.
 if not exist .env (
     echo ⚠️  File .env belum ada, membuat dari template...
-    copy .env.configured .env >nul
+    copy .env.example .env >nul
     echo ✅ File .env berhasil dibuat!
 ) else (
     echo ✅ File .env sudah ada!
@@ -115,8 +115,8 @@ if errorlevel 1 (
 )
 echo.
 
-echo Mengisi data Rusun (6 data)...
-php artisan db:seed --class=RusunSeeder --force
+echo Mengisi data awal (User, 6 Rusun, 8 contoh barang)...
+php artisan db:seed --force
 echo.
 
 :CLEAR_CACHE
@@ -137,6 +137,10 @@ echo ║                    ✅ SETUP BERHASIL! ✅                       ║
 echo ╚════════════════════════════════════════════════════════════════╝
 echo.
 echo Sistem Inventory Sarpras UPRS VI sudah siap digunakan!
+echo.
+echo Kredensial login default (wajib diganti setelah login):
+echo   Email    : petugas@sarpras.com
+echo   Password : password123
 echo.
 echo ┌────────────────────────────────────────────────────────────────┐
 echo │ CARA MENJALANKAN APLIKASI:                                     │

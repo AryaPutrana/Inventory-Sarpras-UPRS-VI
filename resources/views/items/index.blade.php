@@ -21,7 +21,7 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-search"></i> Cari
                         </button>
-                        @if($search)
+                        @if(filled($search))
                         <a href="{{ route('items.index') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Reset
                         </a>
@@ -107,7 +107,7 @@
             </div>
         @else
             <p class="text-center text-muted py-4">
-                @if($search)
+                @if(filled($search))
                     Tidak ada barang yang ditemukan dengan kata kunci "{{ $search }}".
                 @else
                     Belum ada data barang. Silakan tambah barang baru.

@@ -6,7 +6,7 @@ echo.
 
 echo [1/6] Menyalin file .env...
 if not exist .env (
-    copy .env.configured .env
+    copy .env.example .env
     echo File .env berhasil dibuat!
 ) else (
     echo File .env sudah ada, dilewati.
@@ -44,8 +44,8 @@ echo [4/6] Menjalankan Migration...
 php artisan migrate
 echo.
 
-echo [5/6] Menjalankan Seeder (Data Rusun)...
-php artisan db:seed --class=RusunSeeder
+echo [5/6] Menjalankan Seeder (User + Rusun + Contoh Barang)...
+php artisan db:seed --force
 echo.
 
 echo [6/6] Clear Cache...
@@ -57,6 +57,10 @@ echo.
 echo ================================================
 echo SETUP SELESAI!
 echo ================================================
+echo.
+echo Kredensial login default (wajib diganti setelah login):
+echo   Email    : petugas@sarpras.com
+echo   Password : password123
 echo.
 echo Untuk menjalankan aplikasi:
 echo   php artisan serve
