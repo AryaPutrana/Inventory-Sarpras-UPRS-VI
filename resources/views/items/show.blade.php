@@ -67,6 +67,7 @@
                     <a href="{{ route('items.index') }}" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Kembali
                     </a>
+                    
                     <div>
                         <a href="{{ route('items.edit', $item->id) }}" class="btn btn-warning">
                             <i class="bi bi-pencil"></i> Edit
