@@ -85,6 +85,7 @@
                             <option value="pcs" {{ old('unit') == 'pcs' ? 'selected' : '' }}>pcs</option>
                             <option value="unit" {{ old('unit') == 'unit' ? 'selected' : '' }}>unit</option>
                             <option value="box" {{ old('unit') == 'box' ? 'selected' : '' }}>box</option>
+                            <option value="botol" {{ old('unit') == 'botol' ? 'selected' : '' }}>botol</option>
                             <option value="kaleng" {{ old('unit') == 'kaleng' ? 'selected' : '' }}>kaleng</option>
                             <option value="meter" {{ old('unit') == 'meter' ? 'selected' : '' }}>meter</option>
                             <option value="liter" {{ old('unit') == 'liter' ? 'selected' : '' }}>liter</option>

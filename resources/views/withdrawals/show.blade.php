@@ -42,7 +42,7 @@
                     </tr>
                     <tr>
                         <th>Tanggal & Waktu Pengambilan</th>
-                        <td>{{ date('d F Y H:i', strtotime($withdrawal->taken_at)) }}</td>
+                        <td>{{ \Carbon\Carbon::parse($withdrawal->taken_at)->translatedFormat('d F Y H:i') }}</td>
                     </tr>
                     <tr>
                         <th>Keterangan</th>
@@ -50,7 +50,7 @@
                     </tr>
                     <tr>
                         <th>Dicatat pada</th>
-                        <td>{{ date('d F Y H:i', strtotime($withdrawal->created_at)) }}</td>
+                        <td>{{ \Carbon\Carbon::parse($withdrawal->created_at)->translatedFormat('d F Y H:i') }}</td>
                     </tr>
                 </table>
 

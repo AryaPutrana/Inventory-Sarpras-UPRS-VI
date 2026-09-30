@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Item;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Throwable;
 
 class ItemController extends Controller
 {
@@ -16,7 +19,7 @@ class ItemController extends Controller
         $search = $request->input('search');
 
         $items = Item::query()
-            ->when($search, function ($query, $search) {
+            ->when(filled($search), function ($query) use ($search) {
                 return $query->where('item_code', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%");
             })
@@ -43,22 +46,30 @@ class ItemController extends Controller
             'item_code' => 'required|unique:items,item_code|max:50',
             'name' => 'required|max:255',
             'photo' => 'required|image|mimes:jpeg,jpg,png,webp|max:2048',
-            'unit_price' => 'required|numeric|min:0',
+            'unit_price' => 'required|numeric|min:0|max:9999999999999',
             'stock' => 'required|integer|min:0',
             'min_stock' => 'nullable|integer|min:0',
             'unit' => 'required|max:50',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:60000',
         ]);
 
-        // Handle file upload
-        if ($request->hasFile('photo')) {
-            $photo = $request->file('photo');
-            $filename = time() . '_' . $photo->getClientOriginalName();
-            $photo->storeAs('public/items', $filename);
-            $validated['photo'] = $filename;
-        }
+        $validated['min_stock'] = $validated['min_stock'] ?? 0;
+        $validated['description'] = $validated['description'] ?? null;
 
-        Item::create($validated);
+        $photo = $request->file('photo');
+        $filename = Str::uuid() . '.' . $photo->extension();
+
+        try {
+            // Simpan DB + file dalam satu transaksi; file dibersihkan bila simpan gagal
+            DB::transaction(function () use ($validated, $photo, $filename) {
+                $validated['photo'] = $filename;
+                Item::create($validated);
+                $photo->storeAs('public/items', $filename);
+            });
+        } catch (Throwable $e) {
+            Storage::delete('public/items/' . $filename);
+            throw $e;
+        }
 
         return redirect()->route('items.index')
             ->with('success', 'Barang berhasil ditambahkan.');
@@ -93,36 +104,54 @@ class ItemController extends Controller
             'item_code' => 'required|max:50|unique:items,item_code,' . $id,
             'name' => 'required|max:255',
             'photo' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
-            'unit_price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
+            'unit_price' => 'required|numeric|min:0|max:9999999999999',
             'min_stock' => 'nullable|integer|min:0',
             'unit' => 'required|max:50',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:60000',
             'add_stock' => 'nullable|integer|min:0',
         ]);
 
-        // Handle add_stock: tambah stok jika ada input
-        if (!empty($validated['add_stock']) && $validated['add_stock'] > 0) {
-            $validated['stock'] = $item->stock + $validated['add_stock'];
-        }
-        
-        // Remove add_stock dari data yang akan disimpan
-        unset($validated['add_stock']);
+        $validated['min_stock'] = $validated['min_stock'] ?? 0;
+        $validated['description'] = $validated['description'] ?? null;
 
-        // Handle file upload
-        if ($request->hasFile('photo')) {
-            // Delete old photo
-            if ($item->photo) {
-                Storage::delete('public/items/' . $item->photo);
+        $oldPhoto = null;
+        $newFilename = null;
+
+        try {
+            DB::transaction(function () use ($request, $item, &$validated, &$oldPhoto, &$newFilename) {
+                // Tambah stok hanya dari server (anti lost-update: nilai stok tidak diterima dari klien)
+                if (!empty($validated['add_stock']) && $validated['add_stock'] > 0) {
+                    $item->increment('stock', $validated['add_stock']);
+                }
+                unset($validated['add_stock']);
+
+                // Ganti foto bila ada upload baru
+                if ($request->hasFile('photo')) {
+                    $photo = $request->file('photo');
+                    $newFilename = Str::uuid() . '.' . $photo->extension();
+                    $photo->storeAs('public/items', $newFilename);
+                    $validated['photo'] = $newFilename;
+                    $oldPhoto = $item->photo;
+                }
+
+                $item->update($validated);
+            });
+        } catch (Throwable $e) {
+            if ($newFilename) {
+                Storage::delete('public/items/' . $newFilename);
             }
-            
-            $photo = $request->file('photo');
-            $filename = time() . '_' . $photo->getClientOriginalName();
-            $photo->storeAs('public/items', $filename);
-            $validated['photo'] = $filename;
+            throw $e;
         }
 
-        $item->update($validated);
+        // Hapus foto lama hanya setelah transaksi berhasil, dan hanya jika tidak dipakai item lain
+        if ($oldPhoto) {
+            $stillUsed = Item::where('photo', $oldPhoto)
+                ->where('id', '!=', $item->id)
+                ->exists();
+            if (!$stillUsed) {
+                Storage::delete('public/items/' . $oldPhoto);
+            }
+        }
 
         return redirect()->route('items.index')
             ->with('success', 'Barang berhasil diperbarui.');
@@ -135,9 +164,14 @@ class ItemController extends Controller
     {
         $item = Item::findOrFail($id);
         
-        // Delete photo
+        // Hapus foto hanya jika tidak dipakai item lain (mis. default.jpg dipakai banyak barang)
         if ($item->photo) {
-            Storage::delete('public/items/' . $item->photo);
+            $stillUsed = Item::where('photo', $item->photo)
+                ->where('id', '!=', $item->id)
+                ->exists();
+            if (!$stillUsed) {
+                Storage::delete('public/items/' . $item->photo);
+            }
         }
         
         $item->delete();

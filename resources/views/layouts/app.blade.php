@@ -13,6 +13,9 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ asset('images/logo/Logo UPRS VI.png') }}">
+    
     <!-- Custom Pagination CSS -->
     <link href="{{ asset('css/pagination-custom.css') }}" rel="stylesheet">
     
@@ -247,6 +250,23 @@
 
         .card-body {
             padding: 25px;
+        }
+
+        /* Stat Cards */
+        .stat-card {
+            border-left: 4px solid var(--info);
+        }
+
+        .stat-card.success {
+            border-left-color: var(--success);
+        }
+
+        .stat-card.warning {
+            border-left-color: var(--warning);
+        }
+
+        .stat-card.danger {
+            border-left-color: var(--danger);
         }
 
         /* Buttons */
@@ -578,7 +598,7 @@
         <!-- Content Area -->
         <div class="content-area">
             @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <div class="alert alert-success alert-dismissible fade show flash-alert" role="alert">
                     <i class="bi bi-check-circle-fill"></i>
                     <strong>Berhasil!</strong> {{ session('success') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -586,7 +606,7 @@
             @endif
 
             @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="alert alert-danger alert-dismissible fade show flash-alert" role="alert">
                     <i class="bi bi-exclamation-circle-fill"></i>
                     <strong>Error!</strong> {{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -621,9 +641,9 @@
             sidebarOverlay.classList.remove('show');
         });
 
-        // Auto-dismiss alerts
+        // Auto-dismiss flash alerts saja (peringatan stok menipis & info tidak ikut hilang)
         setTimeout(function() {
-            $('.alert').fadeOut('slow');
+            $('.flash-alert').fadeOut('slow');
         }, 5000);
     </script>
 

@@ -24,7 +24,7 @@
                                         data-price="{{ $item->unit_price }}"
                                         data-stock="{{ $item->stock }}"
                                         data-unit="{{ $item->unit }}"
-                                        {{ old('item_id') == $item->id ? 'selected' : '' }}>
+                                        {{ old('item_id', $selectedItemId ?? null) == $item->id ? 'selected' : '' }}>
                                     {{ $item->item_code }} - {{ $item->name }} (Stok: {{ $item->stock }})
                                 </option>
                             @endforeach
@@ -139,26 +139,29 @@ $(document).ready(function() {
     let selectedStock = 0;
     let selectedPrice = 0;
 
-    // When item is selected
-    $('#item_id').on('change', function() {
-        const selectedOption = $(this).find('option:selected');
+    function populateSelectedItem(clearQty) {
+        const selectedOption = $('#item_id').find('option:selected');
         const itemCode = selectedOption.data('code');
         const price = selectedOption.data('price');
         const stock = selectedOption.data('stock');
         const unit = selectedOption.data('unit');
 
-        selectedStock = stock;
-        selectedPrice = price;
+        selectedStock = Number(stock) || 0;
+        selectedPrice = Number(price) || 0;
 
         $('#item_code_display').val(itemCode || '');
-        $('#unit_price_display').val(price ? formatNumber(price) : '');
-        $('#stock_info').text(stock ? `Stok tersedia: ${stock} ${unit}` : '');
-        
-        // Reset quantity and subtotal
-        $('#quantity').val('').attr('max', stock);
-        $('#subtotal_display').val('');
-        
+        $('#unit_price_display').val(price !== undefined && price !== '' ? formatNumber(price) : '');
+        $('#stock_info').text(stock !== undefined && stock !== '' ? `Stok tersedia: ${stock} ${unit}` : '');
+
+        if (clearQty) {
+            $('#quantity').val('');
+        }
         calculateSubtotal();
+    }
+
+    // When item is selected
+    $('#item_id').on('change', function() {
+        populateSelectedItem(true);
     });
 
     // Calculate subtotal when quantity changes
@@ -169,8 +172,8 @@ $(document).ready(function() {
     function calculateSubtotal() {
         const quantity = parseInt($('#quantity').val()) || 0;
         const subtotal = quantity * selectedPrice;
-        
-        if (quantity > 0) {
+
+        if (quantity > 0 && selectedPrice > 0) {
             $('#subtotal_display').val(formatNumber(subtotal));
         } else {
             $('#subtotal_display').val('');
@@ -178,13 +181,19 @@ $(document).ready(function() {
     }
 
     function formatNumber(num) {
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return Number(num).toLocaleString('id-ID');
+    }
+
+    // Inisialisasi dari item yang sudah terpilih (mis. setelah gagal validasi),
+    // agar selectedStock tidak berisi 0 dan form tidak terkunci
+    if ($('#item_id').val()) {
+        populateSelectedItem(false);
     }
 
     // Form validation before submit
     $('#withdrawalForm').on('submit', function(e) {
         const quantity = parseInt($('#quantity').val()) || 0;
-        
+
         if (quantity > selectedStock) {
             e.preventDefault();
             alert(`Stok tidak mencukupi. Stok tersedia hanya ${selectedStock}.`);

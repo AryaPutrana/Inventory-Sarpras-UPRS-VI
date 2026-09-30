@@ -31,12 +31,6 @@ class Item extends Model
         return $this->hasMany(Withdrawal::class);
     }
 
-    // Relationship: Item has many incoming stocks
-    public function incomingStocks()
-    {
-        return $this->hasMany(IncomingStock::class);
-    }
-
     // Check if stock is low
     public function isLowStock()
     {

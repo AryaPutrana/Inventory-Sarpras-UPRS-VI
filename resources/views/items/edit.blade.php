@@ -39,7 +39,7 @@
                         <label for="photo" class="form-label">Foto Barang</label>
                         @if($item->photo)
                             <div class="mb-2">
-                                <img src="{{ asset('storage/items/' . $item->photo) }}" alt="{{ $item->name }}" class="img-thumbnail" style="max-width: 200px;">
+                                <img src="{{ asset('storage/items/' . rawurlencode($item->photo)) }}" alt="{{ $item->name }}" class="img-thumbnail" style="max-width: 200px;">
                                 <p class="text-muted small">Foto saat ini</p>
                             </div>
                         @endif
@@ -65,11 +65,10 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="stock" class="form-label">Jumlah / Stok Saat Ini</label>
+                        <label for="stock_display" class="form-label">Jumlah / Stok Saat Ini</label>
                         <input type="number" class="form-control bg-light" 
                                id="stock_display" value="{{ $item->stock }}" readonly>
                         <small class="text-muted">Stok saat ini: <strong>{{ $item->stock }}</strong> {{ $item->unit }}</small>
-                        <input type="hidden" name="stock" value="{{ $item->stock }}">
                     </div>
 
                     <div class="mb-3">
@@ -106,6 +105,7 @@
                             <option value="pcs" {{ old('unit', $item->unit) == 'pcs' ? 'selected' : '' }}>pcs</option>
                             <option value="unit" {{ old('unit', $item->unit) == 'unit' ? 'selected' : '' }}>unit</option>
                             <option value="box" {{ old('unit', $item->unit) == 'box' ? 'selected' : '' }}>box</option>
+                            <option value="botol" {{ old('unit', $item->unit) == 'botol' ? 'selected' : '' }}>botol</option>
                             <option value="kaleng" {{ old('unit', $item->unit) == 'kaleng' ? 'selected' : '' }}>kaleng</option>
                             <option value="meter" {{ old('unit', $item->unit) == 'meter' ? 'selected' : '' }}>meter</option>
                             <option value="liter" {{ old('unit', $item->unit) == 'liter' ? 'selected' : '' }}>liter</option>

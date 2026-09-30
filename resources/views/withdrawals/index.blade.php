@@ -82,7 +82,7 @@
 
             <!-- Pagination -->
             <div class="d-flex justify-content-center">
-                {{ $withdrawals->links() }}
+                {{ $withdrawals->links('pagination::bootstrap-5') }}
             </div>
         @else
             <p class="text-center text-muted py-4">

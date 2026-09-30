@@ -7,6 +7,7 @@ use App\Models\Withdrawal;
 use App\Models\Item;
 use App\Models\Rusun;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class WithdrawalController extends Controller
 {
@@ -20,12 +21,14 @@ class WithdrawalController extends Controller
         $endDate = $request->get('end_date');
         
         $withdrawals = Withdrawal::with(['item', 'rusun'])
-            ->when($search, function($query) use ($search) {
-                return $query->whereHas('item', function($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('item_code', 'like', "%{$search}%");
-                })
-                ->orWhere('taken_by', 'like', "%{$search}%");
+            ->when(filled($search), function($query) use ($search) {
+                return $query->where(function($q) use ($search) {
+                    $q->whereHas('item', function($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%")
+                           ->orWhere('item_code', 'like', "%{$search}%");
+                    })
+                    ->orWhere('taken_by', 'like', "%{$search}%");
+                });
             })
             ->when($startDate, function($query) use ($startDate) {
                 return $query->whereDate('taken_at', '>=', $startDate);
@@ -51,8 +54,11 @@ class WithdrawalController extends Controller
     {
         $items = Item::orderBy('item_code', 'asc')->get(); // Urut dari terkecil (BRG-001, BRG-002...)
         $rusuns = Rusun::orderBy('name')->get();
-        
-        return view('withdrawals.create', compact('items', 'rusuns'));
+
+        // Pre-select barang dari tautan "Pengambilan Barang" di halaman detail (?item=id)
+        $selectedItemId = request()->integer('item') ?: null;
+
+        return view('withdrawals.create', compact('items', 'rusuns', 'selectedItemId'));
     }
 
     /**
@@ -65,32 +71,37 @@ class WithdrawalController extends Controller
             'taken_by' => 'required|string|max:255',
             'rusun_id' => 'required|exists:rusun,id',
             'quantity' => 'required|integer|min:1',
-            'taken_at' => 'required|date',
-            'description' => 'nullable|string',
+            'taken_at' => 'required|date|before_or_equal:now',
+            'description' => 'nullable|string|max:60000',
         ]);
 
-        // Get item
-        $item = Item::findOrFail($validated['item_id']);
+        try {
+            DB::transaction(function () use ($validated) {
+                // Kunci baris item agar dua request bersamaan tidak mengurangi stok dobel (race condition)
+                $item = Item::whereKey($validated['item_id'])->lockForUpdate()->firstOrFail();
 
-        // Validate stock availability (BR-10)
-        if ($validated['quantity'] > $item->stock) {
+                // Validasi ketersediaan stok (BR-10) di dalam transaksi
+                if ($validated['quantity'] > $item->stock) {
+                    throw ValidationException::withMessages([
+                        'quantity' => "Stok tidak mencukupi. Stok tersedia hanya {$item->stock}.",
+                    ]);
+                }
+
+                // Calculate subtotal
+                $validated['unit_price'] = $item->unit_price;
+                $validated['subtotal'] = $validated['quantity'] * $item->unit_price;
+
+                // Create withdrawal
+                Withdrawal::create($validated);
+
+                // Reduce stock (BR-12)
+                $item->decrement('stock', $validated['quantity']);
+            });
+        } catch (ValidationException $e) {
             return back()
                 ->withInput()
-                ->withErrors(['quantity' => "Stok tidak mencukupi. Stok tersedia hanya {$item->stock}."]);
+                ->withErrors($e->errors());
         }
-
-        // Calculate subtotal
-        $validated['unit_price'] = $item->unit_price;
-        $validated['subtotal'] = $validated['quantity'] * $item->unit_price;
-
-        // Use transaction to ensure data consistency
-        DB::transaction(function () use ($validated, $item) {
-            // Create withdrawal
-            Withdrawal::create($validated);
-
-            // Reduce stock (BR-12)
-            $item->decrement('stock', $validated['quantity']);
-        });
 
         return redirect()->route('withdrawals.index')
             ->with('success', 'Pengambilan barang berhasil disimpan dan stok telah dikurangi.');

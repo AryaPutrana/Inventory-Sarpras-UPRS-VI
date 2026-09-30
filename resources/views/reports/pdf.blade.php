@@ -479,14 +479,14 @@
                                 $withdrawal->item &&
                                 $withdrawal->item->photo &&
                                 file_exists(
-                                    public_path(
-                                        'storage/' . $withdrawal->item->photo
+                                    storage_path(
+                                        'app/public/items/' . $withdrawal->item->photo
                                     )
                                 )
                             )
 
                                 <img
-                                    src="{{ public_path('storage/' . $withdrawal->item->photo) }}"
+                                    src="{{ storage_path('app/public/items/' . $withdrawal->item->photo) }}"
                                     alt="Foto Barang"
                                     class="item-photo"
                                 >
@@ -659,7 +659,7 @@
         <p class="created-date">
 
             Dibuat pada:
-            {{ date('d F Y') }}
+            {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
 
         </p>
 

@@ -13,10 +13,31 @@ class ReportController extends Controller
     public function index(Request $request)
     {
         $rusuns = Rusun::orderBy('name')->get();
-        
+
+        $request->validate([
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+        ], [
+            'start_date.date_format' => 'Format tanggal awal tidak valid. Gunakan format YYYY-MM-DD.',
+            'end_date.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
+        ]);
+
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
         $rusunId = $request->get('rusun_id');
+
+        if ($startDate && $endDate && $endDate < $startDate) {
+            return redirect()->back()->withInput()->withErrors([
+                'end_date' => 'Tanggal akhir harus sama atau setelah tanggal awal.',
+            ]);
+        }
+
+        // Cari rusun dengan aman; bila tidak valid, dianggap "Semua Rusun" (cegah error akses null)
+        $rusun = null;
+        if ($rusunId && $rusunId != 'all') {
+            $rusun = $rusuns->firstWhere('id', $rusunId);
+        }
+        $rusunName = $rusun ? $rusun->name : 'Semua Rusun';
 
         $withdrawals = collect();
         $totalTransactions = 0;
@@ -27,8 +48,8 @@ class ReportController extends Controller
             $query = Withdrawal::with(['item', 'rusun'])
                 ->whereBetween('taken_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
-            if ($rusunId && $rusunId != 'all') {
-                $query->where('rusun_id', $rusunId);
+            if ($rusun) {
+                $query->where('rusun_id', $rusun->id);
             }
 
             $withdrawals = $query->orderBy('taken_at', 'desc')->get();
@@ -44,6 +65,7 @@ class ReportController extends Controller
             'startDate',
             'endDate',
             'rusunId',
+            'rusunName',
             'totalTransactions',
             'totalQuantity',
             'totalValue'
@@ -55,6 +77,24 @@ class ReportController extends Controller
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
         $rusunId = $request->get('rusun_id');
+
+        $request->validate([
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+        ], [
+            'start_date.date_format' => 'Format tanggal awal tidak valid. Gunakan format YYYY-MM-DD.',
+            'end_date.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
+        ]);
+
+        if (!$startDate || !$endDate) {
+            return redirect()->route('reports.index')
+                ->with('error', 'Silakan pilih periode tanggal terlebih dahulu untuk mengekspor laporan.');
+        }
+
+        if ($endDate < $startDate) {
+            return redirect()->route('reports.index')
+                ->with('error', 'Tanggal akhir harus sama atau setelah tanggal awal.');
+        }
 
         $query = Withdrawal::with(['item', 'rusun'])
             ->whereBetween('taken_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
@@ -93,6 +133,24 @@ class ReportController extends Controller
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
         $rusunId = $request->get('rusun_id');
+
+        $request->validate([
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+        ], [
+            'start_date.date_format' => 'Format tanggal awal tidak valid. Gunakan format YYYY-MM-DD.',
+            'end_date.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
+        ]);
+
+        if (!$startDate || !$endDate) {
+            return redirect()->route('reports.index')
+                ->with('error', 'Silakan pilih periode tanggal terlebih dahulu untuk mengekspor laporan.');
+        }
+
+        if ($endDate < $startDate) {
+            return redirect()->route('reports.index')
+                ->with('error', 'Tanggal akhir harus sama atau setelah tanggal awal.');
+        }
 
         $query = Withdrawal::with(['item', 'rusun'])
             ->whereBetween('taken_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
@@ -142,18 +200,26 @@ class ReportController extends Controller
                 'Subtotal'
             ]);
             
+            // Neutralkan formula injection (Excel): prefix ' untuk nilai berawalan =, +, -, @
+            $sanitize = function ($value) {
+                if (is_string($value) && $value !== '' && in_array($value[0], ['=', '+', '-', '@'])) {
+                    return "'" . $value;
+                }
+                return $value;
+            };
+
             // Data
             $no = 1;
             foreach ($withdrawals as $withdrawal) {
                 fputcsv($file, [
                     $no++,
-                    $withdrawal->item->item_code,
-                    $withdrawal->item->name,
-                    $withdrawal->taken_by,
-                    date('d/m/Y H:i', strtotime($withdrawal->taken_at)),
-                    $withdrawal->rusun->name,
+                    $sanitize($withdrawal->item->item_code),
+                    $sanitize($withdrawal->item->name),
+                    $sanitize($withdrawal->taken_by),
+                    $sanitize(date('d/m/Y H:i', strtotime($withdrawal->taken_at))),
+                    $sanitize($withdrawal->rusun->name),
                     $withdrawal->quantity,
-                    $withdrawal->item->unit,
+                    $sanitize($withdrawal->item->unit),
                     'Rp' . number_format($withdrawal->unit_price, 0, ',', '.'),
                     'Rp' . number_format($withdrawal->subtotal, 0, ',', '.')
                 ]);

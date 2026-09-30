@@ -14,7 +14,7 @@
                 <div class="row">
                     <div class="col-md-4 text-center mb-4">
                         @if($item->photo)
-                            <img src="{{ asset('storage/items/' . $item->photo) }}" alt="{{ $item->name }}" class="img-fluid rounded shadow-sm">
+                            <img src="{{ asset('storage/items/' . rawurlencode($item->photo)) }}" alt="{{ $item->name }}" class="img-fluid rounded shadow-sm">
                         @else
                             <div class="bg-light p-5 rounded">
                                 <i class="bi bi-image" style="font-size: 4rem; color: #ccc;"></i>
@@ -39,18 +39,26 @@
                             <tr>
                                 <th>Stok</th>
                                 <td>
-                                    @if($item->stock > 10)
-                                        <span class="badge bg-success fs-6">{{ $item->stock }} {{ $item->unit }}</span>
-                                    @elseif($item->stock > 0)
-                                        <span class="badge bg-warning fs-6">{{ $item->stock }} {{ $item->unit }}</span>
-                                    @else
-                                        <span class="badge bg-danger fs-6">{{ $item->stock }} {{ $item->unit }}</span>
-                                    @endif
+@php
+                                    $status = $item->getStockStatus();
+                                @endphp
+
+                                @if($status == 'empty')
+                                    <span class="badge bg-danger fs-6">{{ $item->stock }} {{ $item->unit }}</span>
+                                @elseif($status == 'low')
+                                    <span class="badge bg-warning text-dark fs-6">
+                                        <i class="bi bi-exclamation-triangle"></i> {{ $item->stock }} {{ $item->unit }}
+                                    </span>
+                                @elseif($status == 'good')
+                                    <span class="badge bg-success fs-6">{{ $item->stock }} {{ $item->unit }}</span>
+                                @else
+                                    <span class="badge bg-info fs-6">{{ $item->stock }} {{ $item->unit }}</span>
+                                @endif
                                 </td>
                             </tr>
                             <tr>
                                 <th>Tanggal Input</th>
-                                <td>{{ date('d F Y', strtotime($item->created_at)) }}</td>
+                                <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}</td>
                             </tr>
                             <tr>
                                 <th>Keterangan</th>

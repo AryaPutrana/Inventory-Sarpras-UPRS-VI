@@ -64,15 +64,10 @@
                 <div class="text-center mb-4">
                     <h4>LAPORAN PENGAMBILAN MATERIAL</h4>
                     <p class="mb-0">
-                        <strong>Periode:</strong> {{ date('d F Y', strtotime($startDate)) }} - {{ date('d F Y', strtotime($endDate)) }}
+                        <strong>Periode:</strong> {{ \Carbon\Carbon::parse($startDate)->translatedFormat('d F Y') }} - {{ \Carbon\Carbon::parse($endDate)->translatedFormat('d F Y') }}
                     </p>
                     <p>
-                        <strong>Rusun:</strong> 
-                        @if($rusunId && $rusunId != 'all')
-                            {{ $rusuns->find($rusunId)->name }}
-                        @else
-                            Semua Rusun
-                        @endif
+                        <strong>Rusun:</strong> {{ $rusunName }}
                     </p>
                 </div>
 
