@@ -9,6 +9,12 @@ class Withdrawal extends Model
 {
     use HasFactory;
 
+    /** Batas aman jumlah pengambilan per transaksi (mencegah overflow INT). */
+    public const MAX_QUANTITY = 1000000;
+
+    /** Batas maksimum kolom DECIMAL(15,2) MySQL: 9999999999999.99 */
+    public const MAX_SUBTOTAL = 9999999999999.99;
+
     protected $fillable = [
         'item_id',
         'taken_by',

@@ -13,14 +13,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4 text-center mb-4">
-                        @if($item->photo)
-                            <img src="{{ asset('storage/items/' . rawurlencode($item->photo)) }}" alt="{{ $item->name }}" class="img-fluid rounded shadow-sm">
-                        @else
-                            <div class="bg-light p-5 rounded">
-                                <i class="bi bi-image" style="font-size: 4rem; color: #ccc;"></i>
-                                <p class="text-muted mt-2">Tidak ada foto</p>
-                            </div>
-                        @endif
+                        <img src="{{ $item->photoUrl() }}" alt="{{ $item->name }}" class="img-fluid rounded shadow-sm">
                     </div>
                     <div class="col-md-8">
                         <table class="table table-borderless">

@@ -37,15 +37,18 @@
 
                     <div class="mb-3">
                         <label for="photo" class="form-label">Foto Barang</label>
-                        @if($item->photo)
-                            <div class="mb-2">
-                                <img src="{{ asset('storage/items/' . rawurlencode($item->photo)) }}" alt="{{ $item->name }}" class="img-thumbnail" style="max-width: 200px;">
-                                <p class="text-muted small">Foto saat ini</p>
-                            </div>
-                        @endif
+                        <div class="mb-2">
+                            <img src="{{ $item->photoUrl() }}" alt="{{ $item->name }}" class="img-thumbnail" style="max-width: 200px;">
+                            <p class="text-muted small">
+                                Foto saat ini
+                                @unless($item->hasPhoto())
+                                    <span class="text-danger">(foto tidak ditemukan, menampilkan placeholder)</span>
+                                @endunless
+                            </p>
+                        </div>
                         <input type="file" class="form-control @error('photo') is-invalid @enderror" 
                                id="photo" name="photo" accept="image/jpeg,image/jpg,image/png,image/webp">
-                        <small class="text-muted">Format: JPG, JPEG, PNG, WEBP (Max: 2MB). Kosongkan jika tidak ingin mengubah foto.</small>
+                        <small class="text-muted">Format: JPG, JPEG, PNG, WEBP (Max: 5MB). Kosongkan jika tidak ingin mengubah foto.</small>
                         @error('photo')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

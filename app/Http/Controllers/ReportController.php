@@ -7,29 +7,42 @@ use App\Models\Withdrawal;
 use App\Models\Rusun;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Validator;
+use App\Http\Concerns\SanitizesQueryInput;
 
 class ReportController extends Controller
 {
+    use SanitizesQueryInput;
+
     public function index(Request $request)
     {
         $rusuns = Rusun::orderBy('name')->get();
 
-        $request->validate([
-            'start_date' => 'nullable|date_format:Y-m-d',
-            'end_date' => 'nullable|date_format:Y-m-d',
+        $startDate = $this->scalarQuery($request, 'start_date');
+        $endDate = $this->scalarQuery($request, 'end_date');
+        $rusunId = $this->scalarQuery($request, 'rusun_id');
+
+        // Sanitasi filter (bukan redirect) supaya halaman laporan GET ini
+        // tidak terjadi redirect berulang saat menerima input tidak valid.
+        $filterWarning = null;
+
+        // Validasi nilai yang sudah disanitasi, bukan input mentah, supaya parameter
+        // berbentuk array tidak memicu redirect berulang pada halaman GET ini.
+        $dateValidator = Validator::make(compact('startDate', 'endDate'), [
+            'startDate' => 'nullable|date_format:Y-m-d',
+            'endDate' => 'nullable|date_format:Y-m-d',
         ], [
-            'start_date.date_format' => 'Format tanggal awal tidak valid. Gunakan format YYYY-MM-DD.',
-            'end_date.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
+            'startDate.date_format' => 'Format tanggal awal tidak valid. Gunakan format YYYY-MM-DD.',
+            'endDate.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
         ]);
 
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        $rusunId = $request->get('rusun_id');
-
-        if ($startDate && $endDate && $endDate < $startDate) {
-            return redirect()->back()->withInput()->withErrors([
-                'end_date' => 'Tanggal akhir harus sama atau setelah tanggal awal.',
-            ]);
+        if ($dateValidator->fails()) {
+            $filterWarning = $dateValidator->errors()->first() . ' Filter tanggal diabaikan.';
+            $startDate = null;
+            $endDate = null;
+        } elseif ($startDate && $endDate && $endDate < $startDate) {
+            $filterWarning = 'Tanggal akhir harus sama atau setelah tanggal awal. Filter tanggal diabaikan.';
+            $endDate = null;
         }
 
         // Cari rusun dengan aman; bila tidak valid, dianggap "Semua Rusun" (cegah error akses null)
@@ -66,6 +79,7 @@ class ReportController extends Controller
             'endDate',
             'rusunId',
             'rusunName',
+            'filterWarning',
             'totalTransactions',
             'totalQuantity',
             'totalValue'
@@ -74,17 +88,17 @@ class ReportController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        $rusunId = $request->get('rusun_id');
+        $startDate = $this->scalarQuery($request, 'start_date');
+        $endDate = $this->scalarQuery($request, 'end_date');
+        $rusunId = $this->scalarQuery($request, 'rusun_id');
 
-        $request->validate([
-            'start_date' => 'nullable|date_format:Y-m-d',
-            'end_date' => 'nullable|date_format:Y-m-d',
+        Validator::make(compact('startDate', 'endDate'), [
+            'startDate' => 'nullable|date_format:Y-m-d',
+            'endDate' => 'nullable|date_format:Y-m-d',
         ], [
-            'start_date.date_format' => 'Format tanggal awal tidak valid. Gunakan format YYYY-MM-DD.',
-            'end_date.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
-        ]);
+            'startDate.date_format' => 'Format tanggal awal tidak valid. Gunakan format YYYY-MM-DD.',
+            'endDate.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
+        ])->validate();
 
         if (!$startDate || !$endDate) {
             return redirect()->route('reports.index')
@@ -130,17 +144,17 @@ class ReportController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        $rusunId = $request->get('rusun_id');
+        $startDate = $this->scalarQuery($request, 'start_date');
+        $endDate = $this->scalarQuery($request, 'end_date');
+        $rusunId = $this->scalarQuery($request, 'rusun_id');
 
-        $request->validate([
-            'start_date' => 'nullable|date_format:Y-m-d',
-            'end_date' => 'nullable|date_format:Y-m-d',
+        Validator::make(compact('startDate', 'endDate'), [
+            'startDate' => 'nullable|date_format:Y-m-d',
+            'endDate' => 'nullable|date_format:Y-m-d',
         ], [
-            'start_date.date_format' => 'Format tanggal awal tidak valid. Gunakan format YYYY-MM-DD.',
-            'end_date.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
-        ]);
+            'startDate.date_format' => 'Format tanggal awal tidak valid. Gunakan format YYYY-MM-DD.',
+            'endDate.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
+        ])->validate();
 
         if (!$startDate || !$endDate) {
             return redirect()->route('reports.index')

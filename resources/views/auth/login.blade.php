@@ -435,6 +435,9 @@
 
         .remember-wrapper {
             margin-bottom: 23px;
+
+            /* Geser sedikit ke kanan agar checkbox tidak menempel tepi container */
+            padding-left: 4px;
         }
 
 
@@ -839,6 +842,12 @@
 
             .form-check-label {
                 font-size: 13px;
+            }
+
+
+            /* Di layar kecil, indentasi dibuat lebih lega agar tidak terlihat mepet */
+            .remember-wrapper {
+                padding-left: 8px;
             }
 
 

@@ -41,6 +41,12 @@
             </div>
         </form>
 
+        @if(!empty($filterWarning))
+            <div class="alert alert-warning py-2">
+                <i class="bi bi-exclamation-triangle"></i> {{ $filterWarning }}
+            </div>
+        @endif
+
         <!-- Withdrawals Table -->
         @if($withdrawals->count() > 0)
             <div class="table-responsive">

@@ -7,19 +7,48 @@ use App\Models\Withdrawal;
 use App\Models\Item;
 use App\Models\Rusun;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use App\Http\Concerns\SanitizesQueryInput;
 
 class WithdrawalController extends Controller
 {
+    use SanitizesQueryInput;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $search = $request->get('search');
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        
+        $search = $this->scalarQuery($request, 'search');
+        $startDate = $this->scalarQuery($request, 'start_date');
+        $endDate = $this->scalarQuery($request, 'end_date');
+
+        // Sanitasi filter tanggal. Input GET yang tidak valid dibuang (bukan di-redirect)
+        // supaya halaman daftar withdrawal tidak terjadi redirect berulang.
+        $filterWarning = null;
+
+        $dateValidator = Validator::make(
+            compact('startDate', 'endDate'),
+            [
+                'startDate' => 'nullable|date_format:Y-m-d',
+                'endDate' => 'nullable|date_format:Y-m-d',
+            ],
+            [
+                'startDate.date_format' => 'Format tanggal awal tidak valid. Gunakan format YYYY-MM-DD.',
+                'endDate.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
+            ]
+        );
+
+        if ($dateValidator->fails()) {
+            $filterWarning = $dateValidator->errors()->first() . ' Filter tanggal diabaikan.';
+            $startDate = null;
+            $endDate = null;
+        } elseif ($startDate && $endDate && $endDate < $startDate) {
+            $filterWarning = 'Tanggal akhir lebih kecil dari tanggal awal. Filter tanggal diabaikan.';
+            $endDate = null;
+        }
+
         $withdrawals = Withdrawal::with(['item', 'rusun'])
             ->when(filled($search), function($query) use ($search) {
                 return $query->where(function($q) use ($search) {
@@ -44,7 +73,13 @@ class WithdrawalController extends Controller
                 'end_date' => $endDate
             ]);
 
-        return view('withdrawals.index', compact('withdrawals', 'search', 'startDate', 'endDate'));
+        return view('withdrawals.index', compact(
+            'withdrawals',
+            'search',
+            'startDate',
+            'endDate',
+            'filterWarning'
+        ));
     }
 
     /**
@@ -70,9 +105,11 @@ class WithdrawalController extends Controller
             'item_id' => 'required|exists:items,id',
             'taken_by' => 'required|string|max:255',
             'rusun_id' => 'required|exists:rusun,id',
-            'quantity' => 'required|integer|min:1',
+            'quantity' => ['required', 'integer', 'min:1', 'max:' . Withdrawal::MAX_QUANTITY],
             'taken_at' => 'required|date|before_or_equal:now',
             'description' => 'nullable|string|max:60000',
+        ], [
+            'quantity.max' => 'Jumlah pengambilan maksimal 1.000.000 unit per transaksi.',
         ]);
 
         try {
@@ -90,6 +127,15 @@ class WithdrawalController extends Controller
                 // Calculate subtotal
                 $validated['unit_price'] = $item->unit_price;
                 $validated['subtotal'] = $validated['quantity'] * $item->unit_price;
+
+                // Cegah overflow kolom DECIMAL(15,2) pada subtotal.
+                // Tanpa guard ini MySQL strict mode akan melempar QueryException (HTTP 500).
+                if ($validated['subtotal'] > Withdrawal::MAX_SUBTOTAL) {
+                    throw ValidationException::withMessages([
+                        'quantity' => 'Total nilai pengambilan melebihi batas maksimum yang bisa disimpan. '
+                            . 'Kurangi jumlah atau harga satuan barang.',
+                    ]);
+                }
 
                 // Create withdrawal
                 Withdrawal::create($validated);

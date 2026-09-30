@@ -38,7 +38,7 @@
                         <label for="photo" class="form-label">Foto Barang <span class="text-danger">*</span></label>
                         <input type="file" class="form-control @error('photo') is-invalid @enderror" 
                                id="photo" name="photo" accept="image/jpeg,image/jpg,image/png,image/webp" required>
-                        <small class="text-muted">Format: JPG, JPEG, PNG, WEBP (Max: 2MB)</small>
+                        <small class="text-muted">Format: JPG, JPEG, PNG, WEBP (Max: 5MB)</small>
                         @error('photo')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

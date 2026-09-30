@@ -33,7 +33,7 @@
                 </div>
             </div>
 
-            <div class="d-flex gap-2 mb-4">
+            <div class="report-actions mb-4">
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-search"></i> Tampilkan Laporan
                 </button>
@@ -45,7 +45,7 @@
                         <i class="bi bi-printer"></i> Cetak
                     </button>
                     <a href="{{ route('reports.pdf', ['start_date' => $startDate, 'end_date' => $endDate, 'rusun_id' => $rusunId]) }}" 
-                       class="btn btn-danger" target="_blank">
+                       class="btn btn-danger" target="_blank" rel="noopener">
                         <i class="bi bi-file-pdf"></i> Export PDF
                     </a>
                     <a href="{{ route('reports.excel', ['start_date' => $startDate, 'end_date' => $endDate, 'rusun_id' => $rusunId]) }}" 
@@ -55,6 +55,12 @@
                 @endif
             </div>
         </form>
+
+        @if(!empty($filterWarning))
+            <div class="alert alert-warning py-2">
+                <i class="bi bi-exclamation-triangle"></i> {{ $filterWarning }}
+            </div>
+        @endif
 
         <hr>
 
@@ -72,8 +78,11 @@
                 </div>
 
                 @if($withdrawals->count() > 0)
+                    <p class="text-muted small d-md-none mb-2">
+                        <i class="bi bi-arrow-left-right"></i> Geser tabel ke samping untuk melihat semua kolom.
+                    </p>
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
+                        <table class="table table-bordered table-hover report-table">
                             <thead class="table-light">
                                 <tr>
                                     <th>No</th>
@@ -148,6 +157,60 @@
 
 @push('styles')
 <style>
+/* =========================================================
+   LAPORAN - RESPONSIF HP
+   ========================================================= */
+
+/* Tombol aksi: membungkus dengan rapi, tidak lagi meluber keluar layar */
+.report-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Cegah kolom tabel saling remuk; tabel digeser horizontal */
+.report-table {
+    min-width: 900px;
+}
+
+@media (max-width: 768px) {
+    .report-actions .btn {
+        font-size: 13px;
+    }
+
+    .report-table {
+        font-size: 12px;
+    }
+
+    .report-table th,
+    .report-table td {
+        padding: 0.4rem 0.5rem;
+        white-space: nowrap;
+    }
+
+    .report-table tfoot th,
+    .report-table tfoot td {
+        white-space: normal;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Tombol memenuhi lebar layar pada HP kecil */
+    .report-actions .btn {
+        flex: 1 1 auto;
+    }
+
+    .report-table {
+        min-width: 760px;
+        font-size: 11.5px;
+    }
+
+    .report-table th,
+    .report-table td {
+        padding: 0.35rem 0.4rem;
+    }
+}
+
 @media print {
     .sidebar, .navbar-custom, .btn, form, .card-header {
         display: none !important;

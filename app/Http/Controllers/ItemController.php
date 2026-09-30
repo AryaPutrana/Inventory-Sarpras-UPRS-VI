@@ -8,15 +8,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
+use App\Http\Concerns\SanitizesQueryInput;
 
 class ItemController extends Controller
 {
+    use SanitizesQueryInput;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $search = $request->input('search');
+        $search = $this->scalarQuery($request, 'search');
 
         $items = Item::query()
             ->when(filled($search), function ($query) use ($search) {
@@ -45,12 +48,19 @@ class ItemController extends Controller
         $validated = $request->validate([
             'item_code' => 'required|unique:items,item_code|max:50',
             'name' => 'required|max:255',
-            'photo' => 'required|image|mimes:jpeg,jpg,png,webp|max:2048',
-            'unit_price' => 'required|numeric|min:0|max:9999999999999',
-            'stock' => 'required|integer|min:0',
-            'min_stock' => 'nullable|integer|min:0',
+            'photo' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'unit_price' => ['required', 'numeric', 'min:0', 'max:' . Item::MAX_UNIT_PRICE],
+            'stock' => ['required', 'integer', 'min:0', 'max:' . Item::MAX_STOCK],
+            'min_stock' => ['nullable', 'integer', 'min:0', 'max:' . Item::MAX_STOCK],
             'unit' => 'required|max:50',
             'description' => 'nullable|string|max:60000',
+        ], [
+            'photo.max' => 'Ukuran foto maksimal 5MB.',
+            'photo.mimes' => 'Format foto harus JPG, JPEG, PNG, atau WEBP.',
+            'photo.image' => 'File yang dipilih harus berupa gambar.',
+            'unit_price.max' => 'Harga satuan maksimal Rp 1.000.000.000.',
+            'stock.max' => 'Jumlah stok terlalu besar.',
+            'min_stock.max' => 'Batas minimum stok terlalu besar.',
         ]);
 
         $validated['min_stock'] = $validated['min_stock'] ?? 0;
@@ -103,12 +113,19 @@ class ItemController extends Controller
         $validated = $request->validate([
             'item_code' => 'required|max:50|unique:items,item_code,' . $id,
             'name' => 'required|max:255',
-            'photo' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
-            'unit_price' => 'required|numeric|min:0|max:9999999999999',
-            'min_stock' => 'nullable|integer|min:0',
+            'photo' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'unit_price' => ['required', 'numeric', 'min:0', 'max:' . Item::MAX_UNIT_PRICE],
+            'min_stock' => ['nullable', 'integer', 'min:0', 'max:' . Item::MAX_STOCK],
             'unit' => 'required|max:50',
             'description' => 'nullable|string|max:60000',
-            'add_stock' => 'nullable|integer|min:0',
+            'add_stock' => ['nullable', 'integer', 'min:0', 'max:' . Item::MAX_ADD_STOCK],
+        ], [
+            'photo.max' => 'Ukuran foto maksimal 5MB.',
+            'photo.mimes' => 'Format foto harus JPG, JPEG, PNG, atau WEBP.',
+            'photo.image' => 'File yang dipilih harus berupa gambar.',
+            'unit_price.max' => 'Harga satuan maksimal Rp 1.000.000.000.',
+            'min_stock.max' => 'Batas minimum stok terlalu besar.',
+            'add_stock.max' => 'Penambahan stok maksimal 1.000.000 Unit per kali.',
         ]);
 
         $validated['min_stock'] = $validated['min_stock'] ?? 0;
