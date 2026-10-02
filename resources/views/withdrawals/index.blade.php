@@ -87,9 +87,7 @@
             </div>
 
             <!-- Pagination -->
-            <div class="d-flex justify-content-center">
-                {{ $withdrawals->links('pagination::bootstrap-5') }}
-            </div>
+            {{ $withdrawals->links('pagination::bootstrap-5') }}
         @else
             <p class="text-center text-muted py-4">
                 @if(filled($search))

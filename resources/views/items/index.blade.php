@@ -93,18 +93,7 @@
             </div>
 
             <!-- Pagination -->
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 gap-3">
-                <div class="text-muted small">
-                    @if($items->total() > 0)
-                        Menampilkan <strong>{{ $items->firstItem() }}</strong> - <strong>{{ $items->lastItem() }}</strong> dari <strong>{{ $items->total() }}</strong> data
-                    @else
-                        Tidak ada data
-                    @endif
-                </div>
-                <div>
-                    {{ $items->links('pagination::bootstrap-5') }}
-                </div>
-            </div>
+            {{ $items->links('pagination::bootstrap-5') }}
         @else
             <p class="text-center text-muted py-4">
                 @if(filled($search))
