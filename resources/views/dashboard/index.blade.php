@@ -89,21 +89,29 @@
                                     <th>Barang</th>
                                     <th>Pengambil</th>
                                     <th>Rusun</th>
-                                    <th>Jumlah</th>
+                                    <th>Jenis/Qty</th>
                                     <th>Tanggal</th>
-                                    <th>Subtotal</th>
+                                    <th>Total Nilai</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($recentWithdrawals as $index => $withdrawal)
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
-                                    <td>{{ $withdrawal->item->name }}</td>
+                                    <td>
+                                        @foreach($withdrawal->items->take(2) as $item)
+                                            {{ $item->item->name }}
+                                            @if(!$loop->last), @endif
+                                        @endforeach
+                                        @if($withdrawal->items->count() > 2)
+                                            +{{ $withdrawal->items->count() - 2 }} lainnya
+                                        @endif
+                                    </td>
                                     <td>{{ $withdrawal->taken_by }}</td>
                                     <td><span class="badge bg-info">{{ $withdrawal->rusun->code }}</span></td>
-                                    <td>{{ $withdrawal->quantity }} {{ $withdrawal->item->unit }}</td>
+                                    <td>{{ $withdrawal->items->count() }} / {{ $withdrawal->total_quantity }}</td>
                                     <td>{{ date('d/m/Y H:i', strtotime($withdrawal->taken_at)) }}</td>
-                                    <td>Rp{{ number_format($withdrawal->subtotal, 0, ',', '.') }}</td>
+                                    <td>Rp{{ number_format($withdrawal->total_value, 0, ',', '.') }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>

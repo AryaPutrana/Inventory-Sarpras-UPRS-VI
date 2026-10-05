@@ -77,7 +77,7 @@
                     </p>
                 </div>
 
-                @if($withdrawals->count() > 0)
+                @if($transactions->count() > 0)
                     <p class="text-muted small d-md-none mb-2">
                         <i class="bi bi-arrow-left-right"></i> Geser tabel ke samping untuk melihat semua kolom.
                     </p>
@@ -86,38 +86,49 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>No</th>
-                                    <th>ID Barang</th>
-                                    <th>Nama Barang</th>
+                                    <th>No. Transaksi</th>
                                     <th>Pengambil</th>
                                     <th>Tanggal Ambil</th>
                                     <th>Rusun</th>
+                                    <th>Daftar Barang</th>
                                     <th>Jumlah</th>
-                                    <th>Satuan</th>
-                                    <th>Harga Satuan</th>
                                     <th>Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($withdrawals as $index => $withdrawal)
+                                @foreach($transactions as $index => $transaction)
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
-                                    <td>{{ $withdrawal->item->item_code }}</td>
-                                    <td>{{ $withdrawal->item->name }}</td>
-                                    <td>{{ $withdrawal->taken_by }}</td>
-                                    <td>{{ date('d/m/Y H:i', strtotime($withdrawal->taken_at)) }}</td>
-                                    <td>{{ $withdrawal->rusun->code }}</td>
-                                    <td class="text-end">{{ $withdrawal->quantity }}</td>
-                                    <td>{{ $withdrawal->item->unit }}</td>
-                                    <td class="text-end">Rp{{ number_format($withdrawal->unit_price, 0, ',', '.') }}</td>
-                                    <td class="text-end">Rp{{ number_format($withdrawal->subtotal, 0, ',', '.') }}</td>
+                                    <td>{{ $transaction->withdrawal->id }}</td>
+                                    <td>{{ $transaction->withdrawal->taken_by }}</td>
+                                    <td>{{ date('d/m/Y H:i', strtotime($transaction->withdrawal->taken_at)) }}</td>
+                                    <td>{{ $transaction->withdrawal->rusun?->name ?? '-' }}</td>
+                                    <td>
+                                        @foreach($transaction->lines as $line)
+                                        <div class="item-line">
+                                            @if($line['item'])
+                                                <img src="{{ $line['item']->photoUrl() }}"
+                                                     alt="{{ $line['name'] }}"
+                                                     class="item-thumb"
+                                                     loading="lazy">
+                                            @endif
+                                            <span>
+                                                {{ $line['code'] }} - {{ $line['name'] }}
+                                                ({{ number_format($line['quantity'], 0, ',', '.') }} {{ $line['unit'] }}
+                                                @ Rp{{ number_format($line['unit_price'], 0, ',', '.') }})
+                                            </span>
+                                        </div>
+                                        @endforeach
+                                    </td>
+                                    <td class="text-end">{{ $transaction->total_quantity }}</td>
+                                    <td class="text-end">Rp{{ number_format($transaction->total_value, 0, ',', '.') }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                             <tfoot class="table-secondary">
                                 <tr>
-                                    <th colspan="6" class="text-end">TOTAL</th>
+                                    <th colspan="6" class="text-end">TOTAL ({{ $totalTransactions }} transaksi)</th>
                                     <th class="text-end">{{ $totalQuantity }}</th>
-                                    <th colspan="2"></th>
                                     <th class="text-end">Rp{{ number_format($totalValue, 0, ',', '.') }}</th>
                                 </tr>
                             </tfoot>
@@ -171,6 +182,27 @@
 /* Cegah kolom tabel saling remuk; tabel digeser horizontal */
 .report-table {
     min-width: 900px;
+}
+
+/* Daftar barang: thumbnail di samping teks, tetap satu baris per barang */
+.item-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.item-line + .item-line {
+    margin-top: 4px;
+}
+
+.item-thumb {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    object-fit: cover;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #fff;
 }
 
 @media (max-width: 768px) {

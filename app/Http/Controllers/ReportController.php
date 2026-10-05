@@ -2,16 +2,107 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Withdrawal;
 use App\Models\Rusun;
+use App\Models\Withdrawal;
+use App\Models\WithdrawalItem;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
+
+trait ReportsWithdrawalDetails
+{
+    /**
+     * Query baris detail pengambilan dalam periode & rusun tertentu.
+     * Satu transaksi dengan banyak barang menghasilkan banyak baris.
+     */
+    private function withdrawalDetailQuery(string $startDate, string $endDate, $rusunId = null)
+    {
+        $query = WithdrawalItem::with(['item', 'withdrawal.rusun'])
+            ->whereHas('withdrawal', function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('taken_at', [$startDate.' 00:00:00', $endDate.' 23:59:59']);
+            });
+
+        if ($rusunId && $rusunId != 'all') {
+            $query->whereHas('withdrawal', function ($q) use ($rusunId) {
+                $q->where('rusun_id', $rusunId);
+            });
+        }
+
+        return $query
+            ->join('withdrawals', 'withdrawals.id', '=', 'withdrawal_items.withdrawal_id')
+            ->orderBy('withdrawals.taken_at', 'desc')
+            ->orderBy('withdrawal_items.id', 'asc')
+            ->select('withdrawal_items.*')
+            ->get();
+    }
+
+    /**
+     * Gabungkan baris detail menjadi satu baris per transaksi.
+     *
+     * Laporan sengaja ditampilkan 1 baris = 1 transaksi (bukan 1 baris per
+     * barang) supaya pembaca tidak salah mengira satu pengambilan itu beberapa
+     * pengambilan. Harga satuan per barang tetap ditulis di dalam sel daftar
+     * barang, jadi tidak ada informasi yang hilang.
+     */
+    private function groupedByTransaction($details)
+    {
+        return $details
+            ->groupBy(fn ($detail) => $detail->withdrawal_id)
+            ->map(function ($group) {
+                $lines = $group->map(fn ($detail) => [
+                    'item' => $detail->item,
+                    'code' => $detail->item?->item_code ?? '-',
+                    'name' => $detail->item?->name ?? '-',
+                    'quantity' => (int) $detail->quantity,
+                    'unit' => $detail->item?->unit ?? '-',
+                    'unit_price' => (float) $detail->unit_price,
+                    'subtotal' => (float) $detail->subtotal,
+                ])->values();
+
+                return (object) [
+                    'withdrawal' => $group->first()->withdrawal,
+                    'lines' => $lines,
+                    'item_count' => $lines->count(),
+                    'total_quantity' => (int) $group->sum('quantity'),
+                    'total_value' => (float) $group->sum('subtotal'),
+                ];
+            })
+            ->values();
+    }
+
+    /**
+     * Jumlah transaksi (header), bukan jumlah baris detail.
+     * Satu pengambilan 5 barang tetap dihitung 1 transaksi.
+     */
+    private function countTransactions(string $startDate, string $endDate, $rusunId = null): int
+    {
+        $query = Withdrawal::whereBetween('taken_at', [$startDate.' 00:00:00', $endDate.' 23:59:59']);
+
+        if ($rusunId && $rusunId != 'all') {
+            $query->where('rusun_id', $rusunId);
+        }
+
+        return $query->count();
+    }
+}
 use App\Http\Concerns\SanitizesQueryInput;
 
 class ReportController extends Controller
 {
+    use ReportsWithdrawalDetails;
+
+    /**
+     * Batas barang yang ditulis per transaksi di PDF.
+     *
+     * Baris tabel PDF tidak bisa pecah antar halaman, jadi transaksi dengan
+     * banyak barang bisa melebihi tinggi halaman dan terpotong. Sisanya
+     * diringkas jadi
+     * "+N barang lainnya"; jumlah & nilainya tetap utuh di kolom Jumlah,
+     * Subtotal, dan bagian ringkasan.
+     */
+    public const PDF_ITEMS_PER_ROW = 10;
+
     use SanitizesQueryInput;
 
     public function index(Request $request)
@@ -37,7 +128,7 @@ class ReportController extends Controller
         ]);
 
         if ($dateValidator->fails()) {
-            $filterWarning = $dateValidator->errors()->first() . ' Filter tanggal diabaikan.';
+            $filterWarning = $dateValidator->errors()->first().' Filter tanggal diabaikan.';
             $startDate = null;
             $endDate = null;
         } elseif ($startDate && $endDate && $endDate < $startDate) {
@@ -52,29 +143,26 @@ class ReportController extends Controller
         }
         $rusunName = $rusun ? $rusun->name : 'Semua Rusun';
 
-        $withdrawals = collect();
+        $transactions = collect();
         $totalTransactions = 0;
         $totalQuantity = 0;
         $totalValue = 0;
 
         if ($startDate && $endDate) {
-            $query = Withdrawal::with(['item', 'rusun'])
-                ->whereBetween('taken_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            $rusunFilterId = $rusun ? $rusun->id : null;
 
-            if ($rusun) {
-                $query->where('rusun_id', $rusun->id);
-            }
+            $details = $this->withdrawalDetailQuery($startDate, $endDate, $rusunFilterId);
 
-            $withdrawals = $query->orderBy('taken_at', 'desc')->get();
-            
-            $totalTransactions = $withdrawals->count();
-            $totalQuantity = $withdrawals->sum('quantity');
-            $totalValue = $withdrawals->sum('subtotal');
+            $transactions = $this->groupedByTransaction($details);
+
+            $totalTransactions = $this->countTransactions($startDate, $endDate, $rusunFilterId);
+            $totalQuantity = $details->sum('quantity');
+            $totalValue = $details->sum('subtotal');
         }
 
         return view('reports.index', compact(
             'rusuns',
-            'withdrawals',
+            'transactions',
             'startDate',
             'endDate',
             'rusunId',
@@ -100,7 +188,7 @@ class ReportController extends Controller
             'endDate.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
         ])->validate();
 
-        if (!$startDate || !$endDate) {
+        if (! $startDate || ! $endDate) {
             return redirect()->route('reports.index')
                 ->with('error', 'Silakan pilih periode tanggal terlebih dahulu untuk mengekspor laporan.');
         }
@@ -110,18 +198,13 @@ class ReportController extends Controller
                 ->with('error', 'Tanggal akhir harus sama atau setelah tanggal awal.');
         }
 
-        $query = Withdrawal::with(['item', 'rusun'])
-            ->whereBetween('taken_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        $details = $this->withdrawalDetailQuery($startDate, $endDate, $rusunId);
 
-        if ($rusunId && $rusunId != 'all') {
-            $query->where('rusun_id', $rusunId);
-        }
+        $transactions = $this->groupedByTransaction($details);
 
-        $withdrawals = $query->orderBy('taken_at', 'desc')->get();
-        
-        $totalTransactions = $withdrawals->count();
-        $totalQuantity = $withdrawals->sum('quantity');
-        $totalValue = $withdrawals->sum('subtotal');
+        $totalTransactions = $this->countTransactions($startDate, $endDate, $rusunId);
+        $totalQuantity = $details->sum('quantity');
+        $totalValue = $details->sum('subtotal');
 
         $rusunName = 'Semua Rusun';
         if ($rusunId && $rusunId != 'all') {
@@ -129,14 +212,17 @@ class ReportController extends Controller
             $rusunName = $rusun ? $rusun->name : 'Semua Rusun';
         }
 
+        $pdfItemLimit = self::PDF_ITEMS_PER_ROW;
+
         $pdf = Pdf::loadView('reports.pdf', compact(
-            'withdrawals',
+            'transactions',
             'startDate',
             'endDate',
             'rusunName',
             'totalTransactions',
             'totalQuantity',
-            'totalValue'
+            'totalValue',
+            'pdfItemLimit'
         ));
 
         return $pdf->download('laporan-pengambilan-material.pdf');
@@ -156,7 +242,7 @@ class ReportController extends Controller
             'endDate.date_format' => 'Format tanggal akhir tidak valid. Gunakan format YYYY-MM-DD.',
         ])->validate();
 
-        if (!$startDate || !$endDate) {
+        if (! $startDate || ! $endDate) {
             return redirect()->route('reports.index')
                 ->with('error', 'Silakan pilih periode tanggal terlebih dahulu untuk mengekspor laporan.');
         }
@@ -166,14 +252,9 @@ class ReportController extends Controller
                 ->with('error', 'Tanggal akhir harus sama atau setelah tanggal awal.');
         }
 
-        $query = Withdrawal::with(['item', 'rusun'])
-            ->whereBetween('taken_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-
-        if ($rusunId && $rusunId != 'all') {
-            $query->where('rusun_id', $rusunId);
-        }
-
-        $withdrawals = $query->orderBy('taken_at', 'desc')->get();
+        $details = $this->withdrawalDetailQuery($startDate, $endDate, $rusunId);
+        $transactions = $this->groupedByTransaction($details);
+        $totalTransactions = $this->countTransactions($startDate, $endDate, $rusunId);
 
         $rusunName = 'Semua Rusun';
         if ($rusunId && $rusunId != 'all') {
@@ -182,69 +263,76 @@ class ReportController extends Controller
         }
 
         // Create CSV content
-        $filename = 'laporan-pengambilan-material-' . date('Y-m-d') . '.csv';
+        $filename = 'laporan-pengambilan-material-'.date('Y-m-d').'.csv';
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $callback = function() use ($withdrawals, $startDate, $endDate, $rusunName) {
+        $callback = function () use ($transactions, $details, $totalTransactions, $startDate, $endDate, $rusunName) {
             $file = fopen('php://output', 'w');
-            
+
             // UTF-8 BOM for Excel compatibility
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            
+
             // Header
             fputcsv($file, ['LAPORAN PENGAMBILAN MATERIAL']);
             fputcsv($file, ['Periode', "$startDate s/d $endDate"]);
             fputcsv($file, ['Rusun', $rusunName]);
             fputcsv($file, []);
-            
-            // Column headers
+
+            // Column headers - satu baris per transaksi, barang digabung dalam 1 sel
             fputcsv($file, [
                 'No',
-                'ID Barang',
-                'Nama Barang',
+                'No. Transaksi',
                 'Pengambil',
                 'Tanggal Ambil',
                 'Rusun',
+                'Daftar Barang',
                 'Jumlah',
-                'Satuan',
-                'Harga Satuan',
-                'Subtotal'
+                'Subtotal',
             ]);
-            
+
             // Neutralkan formula injection (Excel): prefix ' untuk nilai berawalan =, +, -, @
             $sanitize = function ($value) {
                 if (is_string($value) && $value !== '' && in_array($value[0], ['=', '+', '-', '@'])) {
-                    return "'" . $value;
+                    return "'".$value;
                 }
+
                 return $value;
             };
 
-            // Data
+            // Satu baris per transaksi. Daftar barang digabung dalam satu sel dan
+            // dipisah " | " supaya setiap record tetap berada di satu baris.
             $no = 1;
-            foreach ($withdrawals as $withdrawal) {
+            foreach ($transactions as $transaction) {
+                $itemList = $transaction->lines->map(fn ($line) => sprintf(
+                    '%s - %s (%s %s @ Rp%s)',
+                    $line['code'],
+                    $line['name'],
+                    number_format($line['quantity'], 0, ',', '.'),
+                    $line['unit'],
+                    number_format($line['unit_price'], 0, ',', '.')
+                ))->implode(' | ');
+
                 fputcsv($file, [
                     $no++,
-                    $sanitize($withdrawal->item->item_code),
-                    $sanitize($withdrawal->item->name),
-                    $sanitize($withdrawal->taken_by),
-                    $sanitize(date('d/m/Y H:i', strtotime($withdrawal->taken_at))),
-                    $sanitize($withdrawal->rusun->name),
-                    $withdrawal->quantity,
-                    $sanitize($withdrawal->item->unit),
-                    'Rp' . number_format($withdrawal->unit_price, 0, ',', '.'),
-                    'Rp' . number_format($withdrawal->subtotal, 0, ',', '.')
+                    $sanitize($transaction->withdrawal->id),
+                    $sanitize($transaction->withdrawal->taken_by),
+                    $sanitize(date('d/m/Y H:i', strtotime($transaction->withdrawal->taken_at))),
+                    $sanitize($transaction->withdrawal->rusun?->name ?? '-'),
+                    $sanitize($itemList),
+                    $transaction->total_quantity,
+                    'Rp'.number_format($transaction->total_value, 0, ',', '.'),
                 ]);
             }
-            
+
             // Summary
             fputcsv($file, []);
-            fputcsv($file, ['Total Transaksi', $withdrawals->count()]);
-            fputcsv($file, ['Total Barang Diambil', $withdrawals->sum('quantity')]);
-            fputcsv($file, ['Total Nilai', 'Rp' . number_format($withdrawals->sum('subtotal'), 0, ',', '.')]);
-            
+            fputcsv($file, ['Total Transaksi', $totalTransactions]);
+            fputcsv($file, ['Total Barang Diambil', $details->sum('quantity')]);
+            fputcsv($file, ['Total Nilai', 'Rp'.number_format($details->sum('subtotal'), 0, ',', '.')]);
+
             fclose($file);
         };
 

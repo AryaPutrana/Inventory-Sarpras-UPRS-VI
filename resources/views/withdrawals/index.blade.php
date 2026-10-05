@@ -54,27 +54,36 @@
                     <thead class="table-light">
                         <tr>
                             <th>No</th>
-                            <th>ID Barang</th>
-                            <th>Barang</th>
                             <th>Pengambil</th>
+                            <th>Jenis Barang</th>
+                            <th>Total Qty</th>
                             <th>Rusun</th>
-                            <th>Jumlah</th>
                             <th>Tanggal</th>
-                            <th>Subtotal</th>
+                            <th>Total Nilai</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($withdrawals as $index => $withdrawal)
-                        <tr>
-                            <td>{{ $withdrawals->firstItem() + $index }}</td>
-                            <td><strong>{{ $withdrawal->item->item_code }}</strong></td>
-                            <td>{{ $withdrawal->item->name }}</td>
-                            <td>{{ $withdrawal->taken_by }}</td>
-                            <td><span class="badge bg-info">{{ $withdrawal->rusun->code }}</span></td>
-                            <td>{{ $withdrawal->quantity }} {{ $withdrawal->item->unit }}</td>
-                            <td>{{ date('d/m/Y H:i', strtotime($withdrawal->taken_at)) }}</td>
-                            <td>Rp{{ number_format($withdrawal->subtotal, 0, ',', '.') }}</td>
+<tr>
+                        <td>{{ $withdrawals->firstItem() + $index }}</td>
+                        <td>
+                            <strong>{{ $withdrawal->taken_by }}</strong><br>
+                            <small class="text-muted">
+                                @foreach($withdrawal->items->take(2) as $item)
+                                    {{ $item->item->item_code }}
+                                    @if(!$loop->last), @endif
+                                @endforeach
+                                @if($withdrawal->items->count() > 2)
+                                    +{{ $withdrawal->items->count() - 2 }} lainnya
+                                @endif
+                            </small>
+                        </td>
+                        <td>{{ $withdrawal->items->count() }} jenis</td>
+                        <td>{{ $withdrawal->total_quantity }}</td>
+                        <td><span class="badge bg-info">{{ $withdrawal->rusun->code }}</span></td>
+                        <td>{{ date('d/m/Y H:i', strtotime($withdrawal->taken_at)) }}</td>
+                        <td>Rp{{ number_format($withdrawal->total_value, 0, ',', '.') }}</td>
                             <td>
                                 <a href="{{ route('withdrawals.show', $withdrawal->id) }}" class="btn btn-info btn-sm" title="Detail">
                                     <i class="bi bi-eye"></i>

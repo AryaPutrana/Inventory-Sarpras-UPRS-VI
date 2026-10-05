@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\Item;
+use App\Models\Rusun;
+use App\Models\User;
+use App\Models\Withdrawal;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use App\Models\User;
-use App\Models\Item;
-use App\Models\Rusun;
-use App\Models\Withdrawal;
 
 /**
  * Regression test untuk perbaikan keras (hardening): foto, validasi batas, dan sanitasi input.
@@ -190,7 +190,7 @@ class HardeningTest extends TestCase
         $response->assertSessionHasNoErrors();
         $this->assertDatabaseHas('items', [
             'item_code' => 'BRG-H900',
-            'unit_price' => Item::MAX_UNIT_PRICE . '.00',
+            'unit_price' => Item::MAX_UNIT_PRICE.'.00',
         ]);
     }
 
@@ -238,23 +238,76 @@ class HardeningTest extends TestCase
         $this->assertGreaterThan(Withdrawal::MAX_SUBTOTAL, $quantity * $item->unit_price);
 
         $response = $this->post(route('withdrawals.store'), [
-            'item_id' => $item->id,
+            'items' => [
+                ['item_id' => $item->id, 'quantity' => $quantity],
+            ],
             'taken_by' => 'Petugas Uji',
             'rusun_id' => $rusun->id,
-            'quantity' => $quantity,
             'taken_at' => now()->format('Y-m-d\TH:i'),
         ]);
 
         // Harus handled sebagai error validasi (302), bukan HTTP 500
         $response->assertStatus(302);
-        $response->assertSessionHasErrors('quantity');
+        $response->assertSessionHasErrors('items');
         $this->assertStringContainsString(
             'batas maksimum',
-            session('errors')->first('quantity')
+            session('errors')->first('items')
         );
 
         $this->assertDatabaseCount('withdrawals', 0);
+        $this->assertDatabaseCount('withdrawal_items', 0);
         $this->assertDatabaseHas('items', ['id' => $item->id, 'stock' => 50000]);
+    }
+
+    public function test_total_value_across_multiple_items_cannot_overflow_decimal_column(): void
+    {
+        $this->loginAsAdmin();
+
+        $rusun = Rusun::create([
+            'code' => 'RS-300',
+            'name' => 'Rusun Hardening 3',
+        ]);
+
+        // Dua barang masing-masing di bawah batas kolom, tapi jumlahnya lewat
+        // kalau dijumlahkan. Ini hanya mungkin dicek setelah semua baris dihitung.
+        $first = $this->makeItem([
+            'item_code' => 'BRG-OVF1',
+            'unit_price' => Item::MAX_UNIT_PRICE,
+            'stock' => 50000,
+        ]);
+        $second = $this->makeItem([
+            'item_code' => 'BRG-OVF2',
+            'unit_price' => Item::MAX_UNIT_PRICE,
+            'stock' => 50000,
+        ]);
+
+        $this->assertLessThan(
+            Withdrawal::MAX_SUBTOTAL,
+            6000 * $first->unit_price,
+            'Satu baris harus masih di bawah batas kolom'
+        );
+
+        $response = $this->post(route('withdrawals.store'), [
+            'items' => [
+                ['item_id' => $first->id, 'quantity' => 6000],
+                ['item_id' => $second->id, 'quantity' => 6000],
+            ],
+            'taken_by' => 'Petugas Overflow',
+            'rusun_id' => $rusun->id,
+            'taken_at' => now()->format('Y-m-d\TH:i'),
+        ]);
+
+        $response->assertStatus(302);
+        $response->assertSessionHasErrors('items');
+        $this->assertStringContainsString(
+            'batas maksimum',
+            session('errors')->first('items')
+        );
+
+        $this->assertDatabaseCount('withdrawals', 0);
+        $this->assertDatabaseCount('withdrawal_items', 0);
+        $this->assertDatabaseHas('items', ['id' => $first->id, 'stock' => 50000]);
+        $this->assertDatabaseHas('items', ['id' => $second->id, 'stock' => 50000]);
     }
 
     public function test_quantity_above_safe_limit_is_rejected(): void
@@ -270,14 +323,15 @@ class HardeningTest extends TestCase
         $item = $this->makeItem(['stock' => 10]);
 
         $response = $this->post(route('withdrawals.store'), [
-            'item_id' => $item->id,
+            'items' => [
+                ['item_id' => $item->id, 'quantity' => Withdrawal::MAX_QUANTITY + 1],
+            ],
             'taken_by' => 'Petugas Uji',
             'rusun_id' => $rusun->id,
-            'quantity' => Withdrawal::MAX_QUANTITY + 1,
             'taken_at' => now()->format('Y-m-d\TH:i'),
         ]);
 
-        $response->assertSessionHasErrors('quantity');
+        $response->assertSessionHasErrors('items.0.quantity');
         $this->assertDatabaseCount('withdrawals', 0);
     }
 

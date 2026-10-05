@@ -101,40 +101,64 @@
            LEBAR KOLOM
         ===================================================== */
 
+        /*
+         * 8 kolom, total 100% dari lebar halaman.
+         * Urutannya sama persis dengan laporan HTML dan CSV.
+         */
         .col-no {
-            width: 5%;
+            width: 3%;
         }
 
-        .col-photo {
-            width: 9%;
-        }
-
-        .col-code {
-            width: 10%;
-        }
-
-        .col-name {
-            width: 13%;
+        .col-transaksi {
+            width: 6%;
         }
 
         .col-taken {
-            width: 16%;
-        }
-
-        .col-date {
             width: 13%;
         }
 
-        .col-rusun {
-            width: 8%;
+        .col-date {
+            width: 9%;
         }
 
-        .col-qty {
+        .col-rusun {
             width: 10%;
         }
 
+        .col-items {
+            width: 43%;
+        }
+
+        .col-qty {
+            width: 5%;
+        }
+
         .col-subtotal {
-            width: 16%;
+            width: 11%;
+        }
+
+        /*
+         * Thumbnail barang. Sengaja tanpa object-fit karena DomPDF tidak
+         * mendukungnya; ukuran asli dari photoThumbnail() yang dipakai.
+         */
+        .item-thumb {
+            border: 1px solid #999;
+            vertical-align: middle;
+            margin-right: 6px;
+            display: inline-block;
+        }
+
+        .item-row {
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+
+        .item-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .more-items {
+            font-style: italic;
         }
 
 
@@ -157,49 +181,6 @@
         .no-column {
             text-align: center;
             font-weight: bold;
-        }
-
-
-        /* =====================================================
-           FOTO
-        ===================================================== */
-
-        .item-photo {
-            width: 40px;
-            height: 40px;
-
-            object-fit: cover;
-
-            display: block;
-
-            margin: 0 auto;
-
-            border: 1px solid #bdbdbd;
-
-            border-radius: 4px;
-        }
-
-        .no-photo {
-            width: 40px;
-            height: 40px;
-
-            margin: 0 auto;
-
-            padding-top: 15px;
-
-            text-align: center;
-
-            background-color: #f3f4f6;
-
-            border: 1px solid #bdbdbd;
-
-            border-radius: 4px;
-
-            color: #9ca3af;
-
-            font-size: 7px;
-
-            line-height: 1;
         }
 
 
@@ -390,18 +371,17 @@
          DATA PENGAMBILAN
     ===================================================== -->
 
-    @if($withdrawals->count() > 0)
+    @if($transactions->count() > 0)
 
         <table class="report-table">
 
             <colgroup>
                 <col class="col-no">
-                <col class="col-photo">
-                <col class="col-code">
-                <col class="col-name">
+                <col class="col-transaksi">
                 <col class="col-taken">
                 <col class="col-date">
                 <col class="col-rusun">
+                <col class="col-items">
                 <col class="col-qty">
                 <col class="col-subtotal">
             </colgroup>
@@ -420,15 +400,7 @@
                     </th>
 
                     <th>
-                        Foto
-                    </th>
-
-                    <th>
-                        ID<br>Barang
-                    </th>
-
-                    <th>
-                        Nama<br>Barang
+                        No.<br>Transaksi
                     </th>
 
                     <th>
@@ -444,7 +416,11 @@
                     </th>
 
                     <th>
-                        Qty
+                        Daftar Barang
+                    </th>
+
+                    <th>
+                        Jumlah
                     </th>
 
                     <th>
@@ -462,7 +438,7 @@
 
             <tbody>
 
-                @foreach($withdrawals as $index => $withdrawal)
+                @foreach($transactions as $index => $transaction)
 
                     <tr>
 
@@ -472,58 +448,16 @@
                         </td>
 
 
-                        <!-- FOTO -->
+                        <!-- NO. TRANSAKSI -->
                         <td class="text-center">
-
-                            @if(
-                                $withdrawal->item &&
-                                $withdrawal->item->photo &&
-                                file_exists(
-                                    storage_path(
-                                        'app/public/items/' . $withdrawal->item->photo
-                                    )
-                                )
-                            )
-
-                                <img
-                                    src="{{ storage_path('app/public/items/' . $withdrawal->item->photo) }}"
-                                    alt="Foto Barang"
-                                    class="item-photo"
-                                >
-
-                            @else
-
-                                <div class="no-photo">
-                                    No Photo
-                                </div>
-
-                            @endif
-
-                        </td>
-
-
-                        <!-- ID BARANG -->
-                        <td>
-
-                            <strong>
-                                {{ $withdrawal->item ? $withdrawal->item->item_code : '-' }}
-                            </strong>
-
-                        </td>
-
-
-                        <!-- NAMA BARANG -->
-                        <td>
-
-                            {{ $withdrawal->item ? $withdrawal->item->name : '-' }}
-
+                            {{ $transaction->withdrawal->id }}
                         </td>
 
 
                         <!-- PENGAMBIL -->
                         <td>
 
-                            {{ $withdrawal->taken_by ?: '-' }}
+                            {{ $transaction->withdrawal->taken_by ?: '-' }}
 
                         </td>
 
@@ -531,29 +465,49 @@
                         <!-- TANGGAL -->
                         <td>
 
-                            {{ date('d/m/Y', strtotime($withdrawal->taken_at)) }}
+                            {{ date('d/m/Y', strtotime($transaction->withdrawal->taken_at)) }}
 
                             <br>
 
-                            {{ date('H:i', strtotime($withdrawal->taken_at)) }}
+                            {{ date('H:i', strtotime($transaction->withdrawal->taken_at)) }}
 
                         </td>
 
 
                         <!-- RUSUN -->
-                        <td class="text-center">
+                        <td>
 
-                            {{ $withdrawal->rusun ? $withdrawal->rusun->code : '-' }}
+                            {{ $transaction->withdrawal->rusun ? $transaction->withdrawal->rusun->name : '-' }}
 
                         </td>
 
 
-                        <!-- QTY -->
+                        <!-- DAFTAR BARANG -->
+                        <td>
+                            @foreach($transaction->lines->take($pdfItemLimit) as $line)
+                                @php $thumb = $line['item']?->photoThumbnail(40); @endphp
+                                <div class="item-row">
+                                    @if($thumb)
+                                        <img src="{{ $thumb['data'] }}" width="{{ $thumb['width'] }}" height="{{ $thumb['height'] }}" alt="" class="item-thumb">
+                                    @endif
+                                    <span>{{ $line['code'] }} - {{ $line['name'] }}
+                                    ({{ number_format($line['quantity'], 0, ',', '.') }} {{ $line['unit'] }}
+                                    @ Rp{{ number_format($line['unit_price'], 0, ',', '.') }})</span>
+                                </div>
+                            @endforeach
+
+                            @if($transaction->item_count > $pdfItemLimit)
+                                <div class="more-items">
+                                    +{{ $transaction->item_count - $pdfItemLimit }} barang lainnya
+                                </div>
+                            @endif
+                        </td>
+
+
+                        <!-- JUMLAH -->
                         <td class="text-center">
 
-                            {{ $withdrawal->quantity }}
-
-                            {{ $withdrawal->item ? $withdrawal->item->unit : '' }}
+                            {{ $transaction->total_quantity }}
 
                         </td>
 
@@ -562,7 +516,7 @@
                         <td class="text-right">
 
                             <strong>
-                                Rp{{ number_format($withdrawal->subtotal, 0, ',', '.') }}
+                                Rp{{ number_format($transaction->total_value, 0, ',', '.') }}
                             </strong>
 
                         </td>
@@ -583,19 +537,23 @@
                 <tr class="total-row">
 
                     <!--
-                        Ada 9 kolom.
+                        Ada 8 kolom.
 
-                        8 kolom pertama digabung menjadi
-                        label TOTAL.
+                        6 kolom pertama (No sampai Daftar Barang)
+                        digabung menjadi label TOTAL.
 
-                        Kolom ke-9 digunakan untuk nominal total.
+                        Kolom ke-7 untuk total qty, kolom ke-8 untuk nominal.
                     -->
 
                     <th
-                        colspan="8"
+                        colspan="6"
                         class="total-label"
                     >
-                        TOTAL
+                        TOTAL ({{ $totalTransactions }} transaksi)
+                    </th>
+
+                    <th class="text-center">
+                        {{ $totalQuantity }}
                     </th>
 
                     <th class="text-right">
