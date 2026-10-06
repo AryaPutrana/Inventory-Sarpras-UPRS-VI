@@ -85,9 +85,33 @@
                         <td>{{ $withdrawal->taken_at ? $withdrawal->taken_at->translatedFormat('d/m/Y H:i') : '-' }}</td>
                         <td>Rp{{ number_format($withdrawal->total_value, 0, ',', '.') }}</td>
                             <td>
-                                <a href="{{ route('withdrawals.show', $withdrawal->id) }}" class="btn btn-info btn-sm" title="Detail">
-                                    <i class="bi bi-eye"></i>
-                                </a>
+                                <div class="d-flex gap-1 justify-content-center">
+                                    <a href="{{ route('withdrawals.show', $withdrawal->id) }}" 
+                                       class="btn btn-info btn-sm" 
+                                       title="Lihat Detail"
+                                       style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ route('withdrawals.edit', $withdrawal->id) }}" 
+                                       class="btn btn-warning btn-sm" 
+                                       title="Edit Pengambilan"
+                                       style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <form action="{{ route('withdrawals.destroy', $withdrawal->id) }}" 
+                                          method="POST" 
+                                          class="d-inline m-0" 
+                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengambilan ini?\n\nPengambil: {{ $withdrawal->taken_by }}\nJumlah: {{ $withdrawal->total_quantity }} unit ({{ $withdrawal->items->count() }} jenis barang)\n\nStok barang akan dikembalikan.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                class="btn btn-danger btn-sm" 
+                                                title="Hapus Pengambilan"
+                                                style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @endforeach
