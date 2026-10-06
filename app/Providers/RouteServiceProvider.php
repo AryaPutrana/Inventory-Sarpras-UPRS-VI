@@ -46,7 +46,11 @@ class RouteServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute(5)->by(strtolower($request->input('email') ?? '') . '|' . $request->ip());
+            $email = $request->input('email');
+            // Guard: hanya string scalar yang aman untuk strtolower
+            $emailKey = (is_string($email) && $email !== '') ? strtolower($email) : '';
+
+            return Limit::perMinute(5)->by($emailKey.'|'.$request->ip());
         });
     }
 }

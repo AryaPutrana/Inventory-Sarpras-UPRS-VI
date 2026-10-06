@@ -13,7 +13,7 @@ class Rusun extends Model
 
     protected $fillable = [
         'code',
-        'name'
+        'name',
     ];
 
     // Relationship: Rusun has many withdrawals

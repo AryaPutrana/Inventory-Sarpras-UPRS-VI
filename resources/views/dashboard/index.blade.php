@@ -110,7 +110,7 @@
                                     <td>{{ $withdrawal->taken_by }}</td>
                                     <td><span class="badge bg-info">{{ $withdrawal->rusun->code }}</span></td>
                                     <td>{{ $withdrawal->items->count() }} / {{ $withdrawal->total_quantity }}</td>
-                                    <td>{{ date('d/m/Y H:i', strtotime($withdrawal->taken_at)) }}</td>
+                                    <td>{{ $withdrawal->taken_at ? $withdrawal->taken_at->translatedFormat('d/m/Y H:i') : '-' }}</td>
                                     <td>Rp{{ number_format($withdrawal->total_value, 0, ',', '.') }}</td>
                                 </tr>
                                 @endforeach

@@ -51,7 +51,7 @@
                             </tr>
                             <tr>
                                 <th>Tanggal Input</th>
-                                <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}</td>
+                                <td>{{ $item->created_at ? $item->created_at->translatedFormat('d F Y') : '-' }}</td>
                             </tr>
                             <tr>
                                 <th>Keterangan</th>

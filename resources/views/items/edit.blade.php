@@ -91,6 +91,59 @@
                     </div>
 
                     <div class="mb-3">
+                        <label for="subtract_stock" class="form-label">
+                            <i class="bi bi-dash-circle text-danger"></i> Kurangi Stok (Koreksi)
+                        </label>
+                        <input type="number" class="form-control @error('subtract_stock') is-invalid @enderror" 
+                               id="subtract_stock" name="subtract_stock" value="{{ old('subtract_stock', 0) }}" 
+                               placeholder="Jumlah yang ingin dikurangi" min="0" max="{{ $item->stock }}"
+                               onchange="toggleSubtractReason()">
+                        <small class="text-muted text-danger">
+                            <i class="bi bi-exclamation-triangle"></i> Hati-hati! Untuk koreksi stok yang salah input. 
+                            Stok saat ini: <strong>{{ $item->stock }}</strong>. Maksimal kurangi: {{ $item->stock }} unit.
+                        </small>
+                        @error('subtract_stock')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3" id="subtract_reason_wrapper" style="display: none;">
+                        <label for="subtract_reason" class="form-label text-danger">
+                            <i class="bi bi-pencil-square"></i> Alasan Pengurangan Stok <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control @error('subtract_reason') is-invalid @enderror" 
+                                  id="subtract_reason" name="subtract_reason" 
+                                  rows="3" 
+                                  placeholder="Contoh: Salah input pengambilan, seharusnya 10 unit tapi tercatat 100 unit"
+                                  maxlength="255">{{ old('subtract_reason') }}</textarea>
+                        <small class="text-muted">
+                            Wajib diisi untuk audit trail. Maksimal 255 karakter.
+                        </small>
+                        @error('subtract_reason')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <script>
+                        function toggleSubtractReason() {
+                            const subtractInput = document.getElementById('subtract_stock');
+                            const reasonWrapper = document.getElementById('subtract_reason_wrapper');
+                            const reasonTextarea = document.getElementById('subtract_reason');
+                            
+                            if (subtractInput.value > 0) {
+                                reasonWrapper.style.display = 'block';
+                                reasonTextarea.required = true;
+                            } else {
+                                reasonWrapper.style.display = 'none';
+                                reasonTextarea.required = false;
+                            }
+                        }
+                        
+                        // Check on page load
+                        document.addEventListener('DOMContentLoaded', toggleSubtractReason);
+                    </script>
+
+                    <div class="mb-3">
                         <label for="min_stock" class="form-label">Minimum Stok</label>
                         <input type="number" class="form-control @error('min_stock') is-invalid @enderror" 
                                id="min_stock" name="min_stock" value="{{ old('min_stock', $item->min_stock) }}" 

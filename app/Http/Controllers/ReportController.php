@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\SanitizesQueryInput;
 use App\Models\Rusun;
 use App\Models\Withdrawal;
 use App\Models\WithdrawalItem;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
 
@@ -33,8 +35,34 @@ trait ReportsWithdrawalDetails
             ->join('withdrawals', 'withdrawals.id', '=', 'withdrawal_items.withdrawal_id')
             ->orderBy('withdrawals.taken_at', 'desc')
             ->orderBy('withdrawal_items.id', 'asc')
-            ->select('withdrawal_items.*')
-            ->get();
+            ->select('withdrawal_items.*');
+    }
+
+    /**
+     * Hitung total quantity & subtotal dari database (bukan dari collection terpotong).
+     *
+     * Method ini memastikan total selalu akurat meski data detail di-limit.
+     * Return: ['totalQuantity' => int, 'totalValue' => float]
+     */
+    private function detailTotals(string $startDate, string $endDate, $rusunId = null): array
+    {
+        $query = DB::table('withdrawal_items')
+            ->join('withdrawals', 'withdrawals.id', '=', 'withdrawal_items.withdrawal_id')
+            ->whereBetween('withdrawals.taken_at', [$startDate.' 00:00:00', $endDate.' 23:59:59']);
+
+        if ($rusunId && $rusunId != 'all') {
+            $query->where('withdrawals.rusun_id', $rusunId);
+        }
+
+        $result = $query->select(
+            DB::raw('COALESCE(SUM(withdrawal_items.quantity), 0) as totalQuantity'),
+            DB::raw('COALESCE(SUM(withdrawal_items.subtotal), 0) as totalValue')
+        )->first();
+
+        return [
+            'totalQuantity' => (int) $result->totalQuantity,
+            'totalValue' => (float) $result->totalValue,
+        ];
     }
 
     /**
@@ -86,11 +114,11 @@ trait ReportsWithdrawalDetails
         return $query->count();
     }
 }
-use App\Http\Concerns\SanitizesQueryInput;
 
 class ReportController extends Controller
 {
     use ReportsWithdrawalDetails;
+    use SanitizesQueryInput;
 
     /**
      * Batas barang yang ditulis per transaksi di PDF.
@@ -147,17 +175,25 @@ class ReportController extends Controller
         $totalTransactions = 0;
         $totalQuantity = 0;
         $totalValue = 0;
+        $detailLimitReached = false;
 
         if ($startDate && $endDate) {
             $rusunFilterId = $rusun ? $rusun->id : null;
 
-            $details = $this->withdrawalDetailQuery($startDate, $endDate, $rusunFilterId);
+            $details = $this->withdrawalDetailQuery($startDate, $endDate, $rusunFilterId)
+                ->limit(5000)
+                ->get();
 
             $transactions = $this->groupedByTransaction($details);
 
             $totalTransactions = $this->countTransactions($startDate, $endDate, $rusunFilterId);
-            $totalQuantity = $details->sum('quantity');
-            $totalValue = $details->sum('subtotal');
+
+            // Hitung total dari DB, bukan dari collection terpotong
+            $totals = $this->detailTotals($startDate, $endDate, $rusunFilterId);
+            $totalQuantity = $totals['totalQuantity'];
+            $totalValue = $totals['totalValue'];
+
+            $detailLimitReached = $details->count() >= 5000;
         }
 
         return view('reports.index', compact(
@@ -170,7 +206,8 @@ class ReportController extends Controller
             'filterWarning',
             'totalTransactions',
             'totalQuantity',
-            'totalValue'
+            'totalValue',
+            'detailLimitReached'
         ));
     }
 
@@ -198,13 +235,20 @@ class ReportController extends Controller
                 ->with('error', 'Tanggal akhir harus sama atau setelah tanggal awal.');
         }
 
-        $details = $this->withdrawalDetailQuery($startDate, $endDate, $rusunId);
+        $details = $this->withdrawalDetailQuery($startDate, $endDate, $rusunId)
+            ->limit(5000)
+            ->get();
 
         $transactions = $this->groupedByTransaction($details);
 
         $totalTransactions = $this->countTransactions($startDate, $endDate, $rusunId);
-        $totalQuantity = $details->sum('quantity');
-        $totalValue = $details->sum('subtotal');
+
+        // Hitung total dari DB, bukan dari collection terpotong
+        $totals = $this->detailTotals($startDate, $endDate, $rusunId);
+        $totalQuantity = $totals['totalQuantity'];
+        $totalValue = $totals['totalValue'];
+
+        $detailLimitReached = $details->count() >= 5000;
 
         $rusunName = 'Semua Rusun';
         if ($rusunId && $rusunId != 'all') {
@@ -222,7 +266,8 @@ class ReportController extends Controller
             'totalTransactions',
             'totalQuantity',
             'totalValue',
-            'pdfItemLimit'
+            'pdfItemLimit',
+            'detailLimitReached'
         ));
 
         return $pdf->download('laporan-pengambilan-material.pdf');
@@ -252,9 +297,17 @@ class ReportController extends Controller
                 ->with('error', 'Tanggal akhir harus sama atau setelah tanggal awal.');
         }
 
-        $details = $this->withdrawalDetailQuery($startDate, $endDate, $rusunId);
+        $details = $this->withdrawalDetailQuery($startDate, $endDate, $rusunId)
+            ->limit(5000)
+            ->get();
+
         $transactions = $this->groupedByTransaction($details);
         $totalTransactions = $this->countTransactions($startDate, $endDate, $rusunId);
+
+        // Hitung total dari DB, bukan dari collection terpotong
+        $totals = $this->detailTotals($startDate, $endDate, $rusunId);
+        $totalQuantity = $totals['totalQuantity'];
+        $totalValue = $totals['totalValue'];
 
         $rusunName = 'Semua Rusun';
         if ($rusunId && $rusunId != 'all') {
@@ -269,7 +322,7 @@ class ReportController extends Controller
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $callback = function () use ($transactions, $details, $totalTransactions, $startDate, $endDate, $rusunName) {
+        $callback = function () use ($transactions, $totalTransactions, $totalQuantity, $totalValue, $startDate, $endDate, $rusunName) {
             $file = fopen('php://output', 'w');
 
             // UTF-8 BOM for Excel compatibility
@@ -330,8 +383,8 @@ class ReportController extends Controller
             // Summary
             fputcsv($file, []);
             fputcsv($file, ['Total Transaksi', $totalTransactions]);
-            fputcsv($file, ['Total Barang Diambil', $details->sum('quantity')]);
-            fputcsv($file, ['Total Nilai', 'Rp'.number_format($details->sum('subtotal'), 0, ',', '.')]);
+            fputcsv($file, ['Total Barang Diambil', $totalQuantity]);
+            fputcsv($file, ['Total Nilai', 'Rp'.number_format($totalValue, 0, ',', '.')]);
 
             fclose($file);
         };

@@ -41,9 +41,6 @@
                     <i class="bi bi-arrow-clockwise"></i> Reset
                 </a>
                 @if($startDate && $endDate)
-                    <button type="button" class="btn btn-success" onclick="window.print()">
-                        <i class="bi bi-printer"></i> Cetak
-                    </button>
                     <a href="{{ route('reports.pdf', ['start_date' => $startDate, 'end_date' => $endDate, 'rusun_id' => $rusunId]) }}" 
                        class="btn btn-danger" target="_blank" rel="noopener">
                         <i class="bi bi-file-pdf"></i> Export PDF
@@ -101,7 +98,7 @@
                                     <td>{{ $index + 1 }}</td>
                                     <td>{{ $transaction->withdrawal->id }}</td>
                                     <td>{{ $transaction->withdrawal->taken_by }}</td>
-                                    <td>{{ date('d/m/Y H:i', strtotime($transaction->withdrawal->taken_at)) }}</td>
+                                    <td>{{ $transaction->withdrawal->taken_at ? $transaction->withdrawal->taken_at->translatedFormat('d/m/Y H:i') : '-' }}</td>
                                     <td>{{ $transaction->withdrawal->rusun?->name ?? '-' }}</td>
                                     <td>
                                         @foreach($transaction->lines as $line)

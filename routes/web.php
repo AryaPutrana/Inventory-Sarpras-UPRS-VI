@@ -1,11 +1,11 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ItemController;
-use App\Http\Controllers\WithdrawalController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\WithdrawalController;
+use Illuminate\Support\Facades\Route;
 
 // Authentication Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -30,6 +30,10 @@ Route::middleware('auth')->group(function () {
 
     // Reports (Laporan)
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.pdf');
-    Route::get('/reports/export/excel', [ReportController::class, 'exportExcel'])->name('reports.excel');
+    Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])
+        ->name('reports.pdf')
+        ->middleware('throttle:10,1');
+    Route::get('/reports/export/excel', [ReportController::class, 'exportExcel'])
+        ->name('reports.excel')
+        ->middleware('throttle:10,1');
 });

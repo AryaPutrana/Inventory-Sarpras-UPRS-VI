@@ -32,11 +32,11 @@
                         <table class="table table-borderless mb-0">
                             <tr>
                                 <th width="35%">Tanggal & Waktu</th>
-                                <td>{{ \Carbon\Carbon::parse($withdrawal->taken_at)->translatedFormat('d F Y H:i') }}</td>
+                                <td>{{ $withdrawal->taken_at ? $withdrawal->taken_at->translatedFormat('d F Y H:i') : '-' }}</td>
                             </tr>
                             <tr>
                                 <th>Dicatat pada</th>
-                                <td>{{ \Carbon\Carbon::parse($withdrawal->created_at)->translatedFormat('d F Y H:i') }}</td>
+                                <td>{{ $withdrawal->created_at ? $withdrawal->created_at->translatedFormat('d F Y H:i') : '-' }}</td>
                             </tr>
                             <tr>
                                 <th>Keterangan</th>
@@ -94,9 +94,7 @@
                         <i class="bi bi-arrow-left"></i> Kembali
                     </a>
                     @if($withdrawal->items->isNotEmpty())
-                        <a href="{{ route('items.show', $withdrawal->items->first()->item->id) }}" class="btn btn-info">
-                            <i class="bi bi-box-seam"></i> Lihat Detail Barang
-                        </a>
+                        
                     @endif
                 </div>
             </div>

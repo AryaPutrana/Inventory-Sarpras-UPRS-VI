@@ -37,7 +37,7 @@ class LoginController extends Controller
             $request->session()->regenerate();
 
             return redirect()->intended(route('dashboard'))
-                ->with('success', 'Selamat datang, ' . Auth::user()->name . '!');
+                ->with('success', 'Selamat datang, '.Auth::user()->name.'!');
         }
 
         return back()

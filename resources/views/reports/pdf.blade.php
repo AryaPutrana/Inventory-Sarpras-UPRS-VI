@@ -354,9 +354,9 @@
 
         <p>
             <strong>Periode:</strong>
-            {{ date('d/m/Y', strtotime($startDate)) }}
+            {{ \Carbon\Carbon::parse($startDate)->translatedFormat('d/m/Y') }}
             -
-            {{ date('d/m/Y', strtotime($endDate)) }}
+            {{ \Carbon\Carbon::parse($endDate)->translatedFormat('d/m/Y') }}
         </p>
 
         <p>
@@ -465,11 +465,11 @@
                         <!-- TANGGAL -->
                         <td>
 
-                            {{ date('d/m/Y', strtotime($transaction->withdrawal->taken_at)) }}
+                            {{ $transaction->withdrawal->taken_at ? $transaction->withdrawal->taken_at->translatedFormat('d/m/Y') : '-' }}
 
                             <br>
 
-                            {{ date('H:i', strtotime($transaction->withdrawal->taken_at)) }}
+                            {{ $transaction->withdrawal->taken_at ? $transaction->withdrawal->taken_at->translatedFormat('H:i') : '-' }}
 
                         </td>
 

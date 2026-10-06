@@ -43,6 +43,8 @@
                             <th>Harga</th>
                             <th>Stok</th>
                             <th>Satuan</th>
+                            <th>Tgl Input</th>
+                            <th>Tgl Update</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -71,6 +73,8 @@
                                 @endif
                             </td>
                             <td>{{ $item->unit }}</td>
+                            <td>{{ $item->created_at ? $item->created_at->translatedFormat('d M Y') : '-' }}</td>
+                            <td>{{ $item->updated_at ? $item->updated_at->translatedFormat('d M Y') : '-' }}</td>
                             <td>
                                 <a href="{{ route('items.show', $item->id) }}" class="btn btn-info btn-sm" title="Detail">
                                     <i class="bi bi-eye"></i>

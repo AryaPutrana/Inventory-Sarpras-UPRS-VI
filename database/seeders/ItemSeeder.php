@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\Item;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
 class ItemSeeder extends Seeder
@@ -15,7 +14,7 @@ class ItemSeeder extends Seeder
     public function run(): void
     {
         // Pastikan direktori storage ada
-        if (!Storage::exists('public/items')) {
+        if (! Storage::exists('public/items')) {
             Storage::makeDirectory('public/items');
         }
 
@@ -28,7 +27,7 @@ class ItemSeeder extends Seeder
                 'stock' => 25,
                 'min_stock' => 10,
                 'unit' => 'pcs',
-                'description' => 'Sapu lidi untuk kebersihan area rusun'
+                'description' => 'Sapu lidi untuk kebersihan area rusun',
             ],
             [
                 'item_code' => 'BRG-002',
@@ -38,7 +37,7 @@ class ItemSeeder extends Seeder
                 'stock' => 8,
                 'min_stock' => 15,
                 'unit' => 'pcs',
-                'description' => 'Pel lantai dengan gagang stainless'
+                'description' => 'Pel lantai dengan gagang stainless',
             ],
             [
                 'item_code' => 'BRG-003',
@@ -48,7 +47,7 @@ class ItemSeeder extends Seeder
                 'stock' => 50,
                 'min_stock' => 20,
                 'unit' => 'pcs',
-                'description' => 'Kain lap microfiber ukuran 30x30 cm'
+                'description' => 'Kain lap microfiber ukuran 30x30 cm',
             ],
             [
                 'item_code' => 'BRG-004',
@@ -58,7 +57,7 @@ class ItemSeeder extends Seeder
                 'stock' => 30,
                 'min_stock' => 25,
                 'unit' => 'botol',
-                'description' => 'Sabun cuci piring cair 800ml'
+                'description' => 'Sabun cuci piring cair 800ml',
             ],
             [
                 'item_code' => 'BRG-005',
@@ -68,7 +67,7 @@ class ItemSeeder extends Seeder
                 'stock' => 5,
                 'min_stock' => 8,
                 'unit' => 'pcs',
-                'description' => 'Ember plastik kapasitas 10 liter'
+                'description' => 'Ember plastik kapasitas 10 liter',
             ],
             [
                 'item_code' => 'BRG-006',
@@ -78,7 +77,7 @@ class ItemSeeder extends Seeder
                 'stock' => 12,
                 'min_stock' => 10,
                 'unit' => 'pcs',
-                'description' => 'Pengki sampah plastik dengan gagang'
+                'description' => 'Pengki sampah plastik dengan gagang',
             ],
             [
                 'item_code' => 'BRG-007',
@@ -88,7 +87,7 @@ class ItemSeeder extends Seeder
                 'stock' => 3,
                 'min_stock' => 10,
                 'unit' => 'pcs',
-                'description' => 'Sikat WC dengan tempat holder'
+                'description' => 'Sikat WC dengan tempat holder',
             ],
             [
                 'item_code' => 'BRG-008',
@@ -98,7 +97,7 @@ class ItemSeeder extends Seeder
                 'stock' => 15,
                 'min_stock' => 10,
                 'unit' => 'botol',
-                'description' => 'Cairan pembersih lantai 1 liter'
+                'description' => 'Cairan pembersih lantai 1 liter',
             ],
         ];
 

@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Concerns\SanitizesQueryInput;
 use App\Models\Item;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
-use App\Http\Concerns\SanitizesQueryInput;
 
 class ItemController extends Controller
 {
@@ -49,9 +50,9 @@ class ItemController extends Controller
             'item_code' => 'required|unique:items,item_code|max:50',
             'name' => 'required|max:255',
             'photo' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
-            'unit_price' => ['required', 'numeric', 'min:0', 'max:' . Item::MAX_UNIT_PRICE],
-            'stock' => ['required', 'integer', 'min:0', 'max:' . Item::MAX_STOCK],
-            'min_stock' => ['nullable', 'integer', 'min:0', 'max:' . Item::MAX_STOCK],
+            'unit_price' => ['required', 'numeric', 'min:0', 'max:'.Item::MAX_UNIT_PRICE],
+            'stock' => ['required', 'integer', 'min:0', 'max:'.Item::MAX_STOCK],
+            'min_stock' => ['nullable', 'integer', 'min:0', 'max:'.Item::MAX_STOCK],
             'unit' => 'required|max:50',
             'description' => 'nullable|string|max:60000',
         ], [
@@ -67,7 +68,7 @@ class ItemController extends Controller
         $validated['description'] = $validated['description'] ?? null;
 
         $photo = $request->file('photo');
-        $filename = Str::uuid() . '.' . $photo->extension();
+        $filename = Str::uuid().'.'.$photo->extension();
 
         try {
             // Simpan DB + file dalam satu transaksi; file dibersihkan bila simpan gagal
@@ -77,7 +78,7 @@ class ItemController extends Controller
                 $photo->storeAs('public/items', $filename);
             });
         } catch (Throwable $e) {
-            Storage::delete('public/items/' . $filename);
+            Storage::delete('public/items/'.$filename);
             throw $e;
         }
 
@@ -91,6 +92,7 @@ class ItemController extends Controller
     public function show(string $id)
     {
         $item = Item::findOrFail($id);
+
         return view('items.show', compact('item'));
     }
 
@@ -100,6 +102,7 @@ class ItemController extends Controller
     public function edit(string $id)
     {
         $item = Item::findOrFail($id);
+
         return view('items.edit', compact('item'));
     }
 
@@ -111,14 +114,16 @@ class ItemController extends Controller
         $item = Item::findOrFail($id);
 
         $validated = $request->validate([
-            'item_code' => 'required|max:50|unique:items,item_code,' . $id,
+            'item_code' => 'required|max:50|unique:items,item_code,'.$id,
             'name' => 'required|max:255',
             'photo' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
-            'unit_price' => ['required', 'numeric', 'min:0', 'max:' . Item::MAX_UNIT_PRICE],
-            'min_stock' => ['nullable', 'integer', 'min:0', 'max:' . Item::MAX_STOCK],
+            'unit_price' => ['required', 'numeric', 'min:0', 'max:'.Item::MAX_UNIT_PRICE],
+            'min_stock' => ['nullable', 'integer', 'min:0', 'max:'.Item::MAX_STOCK],
             'unit' => 'required|max:50',
             'description' => 'nullable|string|max:60000',
-            'add_stock' => ['nullable', 'integer', 'min:0', 'max:' . Item::MAX_ADD_STOCK],
+            'add_stock' => ['nullable', 'integer', 'min:0', 'max:'.Item::MAX_ADD_STOCK],
+            'subtract_stock' => ['nullable', 'integer', 'min:0', 'max:'.$item->stock],
+            'subtract_reason' => ['required_if:subtract_stock,>0', 'nullable', 'string', 'max:255'],
         ], [
             'photo.max' => 'Ukuran foto maksimal 5MB.',
             'photo.mimes' => 'Format foto harus JPG, JPEG, PNG, atau WEBP.',
@@ -126,6 +131,8 @@ class ItemController extends Controller
             'unit_price.max' => 'Harga satuan maksimal Rp 1.000.000.000.',
             'min_stock.max' => 'Batas minimum stok terlalu besar.',
             'add_stock.max' => 'Penambahan stok maksimal 1.000.000 Unit per kali.',
+            'subtract_stock.max' => 'Pengurangan stok tidak boleh melebihi stok saat ini ('.$item->stock.' unit).',
+            'subtract_reason.required_if' => 'Alasan pengurangan stok wajib diisi.',
         ]);
 
         $validated['min_stock'] = $validated['min_stock'] ?? 0;
@@ -135,27 +142,62 @@ class ItemController extends Controller
         $newFilename = null;
 
         try {
-            DB::transaction(function () use ($request, $item, &$validated, &$oldPhoto, &$newFilename) {
+            DB::transaction(function () use ($request, $id, &$validated, &$oldPhoto, &$newFilename) {
+                // Lock baris untuk mencegah race condition
+                $locked = Item::whereKey($id)->lockForUpdate()->firstOrFail();
+
                 // Tambah stok hanya dari server (anti lost-update: nilai stok tidak diterima dari klien)
-                if (!empty($validated['add_stock']) && $validated['add_stock'] > 0) {
-                    $item->increment('stock', $validated['add_stock']);
+                if (! empty($validated['add_stock']) && $validated['add_stock'] > 0) {
+                    $locked->increment('stock', $validated['add_stock']);
+
+                    // Audit trail untuk penambahan stok
+                    \App\Models\StockAdjustment::create([
+                        'item_id' => $locked->id,
+                        'user_id' => auth()->id(),
+                        'type' => 'add',
+                        'quantity' => $validated['add_stock'],
+                        'reason' => 'Penambahan stok melalui form edit barang',
+                    ]);
                 }
                 unset($validated['add_stock']);
+
+                // Kurangi stok (untuk koreksi kesalahan input)
+                if (! empty($validated['subtract_stock']) && $validated['subtract_stock'] > 0) {
+                    // Re-check stok di dalam lock (race condition guard)
+                    if ($locked->stock < $validated['subtract_stock']) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'subtract_stock' => 'Stok tidak mencukupi. Stok saat ini: '.$locked->stock.' unit. Kemungkinan ada pengambilan bersamaan.',
+                        ]);
+                    }
+
+                    $locked->decrement('stock', $validated['subtract_stock']);
+
+                    // Audit trail untuk pengurangan stok
+                    \App\Models\StockAdjustment::create([
+                        'item_id' => $locked->id,
+                        'user_id' => auth()->id(),
+                        'type' => 'subtract',
+                        'quantity' => $validated['subtract_stock'],
+                        'reason' => $validated['subtract_reason'] ?? 'Koreksi stok',
+                    ]);
+                }
+                unset($validated['subtract_stock']);
+                unset($validated['subtract_reason']);
 
                 // Ganti foto bila ada upload baru
                 if ($request->hasFile('photo')) {
                     $photo = $request->file('photo');
-                    $newFilename = Str::uuid() . '.' . $photo->extension();
+                    $newFilename = Str::uuid().'.'.$photo->extension();
                     $photo->storeAs('public/items', $newFilename);
                     $validated['photo'] = $newFilename;
-                    $oldPhoto = $item->photo;
+                    $oldPhoto = $locked->photo;
                 }
 
-                $item->update($validated);
+                $locked->update($validated);
             });
         } catch (Throwable $e) {
             if ($newFilename) {
-                Storage::delete('public/items/' . $newFilename);
+                Storage::delete('public/items/'.$newFilename);
             }
             throw $e;
         }
@@ -165,8 +207,12 @@ class ItemController extends Controller
             $stillUsed = Item::where('photo', $oldPhoto)
                 ->where('id', '!=', $item->id)
                 ->exists();
-            if (!$stillUsed) {
-                Storage::delete('public/items/' . $oldPhoto);
+            if (! $stillUsed) {
+                Storage::delete('public/items/'.$oldPhoto);
+
+                // Invalidate cache thumbnail foto lama
+                $oldKey = 'item-thumb:'.sha1($oldPhoto.'|44|v1');
+                Cache::forget($oldKey);
             }
         }
 
@@ -192,11 +238,15 @@ class ItemController extends Controller
             $stillUsed = Item::where('photo', $item->photo)
                 ->where('id', '!=', $item->id)
                 ->exists();
-            if (!$stillUsed) {
-                Storage::delete('public/items/' . $item->photo);
+            if (! $stillUsed) {
+                Storage::delete('public/items/'.$item->photo);
+
+                // Invalidate cache thumbnail
+                $cacheKey = 'item-thumb:'.sha1($item->photo.'|44|v1');
+                Cache::forget($cacheKey);
             }
         }
-        
+
         $item->delete();
 
         return redirect()->route('items.index')

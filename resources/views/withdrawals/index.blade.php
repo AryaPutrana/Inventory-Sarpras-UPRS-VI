@@ -82,7 +82,7 @@
                         <td>{{ $withdrawal->items->count() }} jenis</td>
                         <td>{{ $withdrawal->total_quantity }}</td>
                         <td><span class="badge bg-info">{{ $withdrawal->rusun->code }}</span></td>
-                        <td>{{ date('d/m/Y H:i', strtotime($withdrawal->taken_at)) }}</td>
+                        <td>{{ $withdrawal->taken_at ? $withdrawal->taken_at->translatedFormat('d/m/Y H:i') : '-' }}</td>
                         <td>Rp{{ number_format($withdrawal->total_value, 0, ',', '.') }}</td>
                             <td>
                                 <a href="{{ route('withdrawals.show', $withdrawal->id) }}" class="btn btn-info btn-sm" title="Detail">
