@@ -89,7 +89,7 @@
                                    class="form-control @error('taken_at') is-invalid @enderror" 
                                    id="taken_at" 
                                    name="taken_at" 
-                                   value="{{ old('taken_at', $withdrawal->taken_at->format('Y-m-d\TH:i')) }}" 
+                                   value="{{ old('taken_at', $withdrawal->taken_at?->format('Y-m-d\TH:i') ?? '') }}" 
                                    required>
                             @error('taken_at')
                                 <div class="invalid-feedback">{{ $message }}</div>

@@ -13,7 +13,7 @@ Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:l
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Protected Routes (requires authentication)
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     // Redirect root to dashboard
     Route::get('/', function () {
         return redirect('/dashboard');
@@ -30,10 +30,12 @@ Route::middleware('auth')->group(function () {
 
     // Reports (Laporan)
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])
-        ->name('reports.pdf')
-        ->middleware('throttle:10,1');
-    Route::get('/reports/export/excel', [ReportController::class, 'exportExcel'])
-        ->name('reports.excel')
-        ->middleware('throttle:10,1');
+    
+    // Export routes dengan rate limiting lebih ketat
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])
+            ->name('reports.pdf');
+        Route::get('/reports/export/excel', [ReportController::class, 'exportExcel'])
+            ->name('reports.excel');
+    });
 });

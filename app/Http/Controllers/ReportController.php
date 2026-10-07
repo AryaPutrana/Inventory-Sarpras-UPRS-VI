@@ -131,8 +131,6 @@ class ReportController extends Controller
      */
     public const PDF_ITEMS_PER_ROW = 10;
 
-    use SanitizesQueryInput;
-
     public function index(Request $request)
     {
         $rusuns = Rusun::orderBy('name')->get();
