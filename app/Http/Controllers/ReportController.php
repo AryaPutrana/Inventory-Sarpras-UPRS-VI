@@ -233,11 +233,19 @@ class ReportController extends Controller
                 ->with('error', 'Tanggal akhir harus sama atau setelah tanggal awal.');
         }
 
+        // Data detail per barang untuk PDF (tidak digrup)
         $details = $this->withdrawalDetailQuery($startDate, $endDate, $rusunId)
             ->limit(5000)
             ->get();
 
-        $transactions = $this->groupedByTransaction($details);
+        // Grup berdasarkan withdrawal_id untuk rowspan logic di PDF
+        $groupedDetails = $details->groupBy('withdrawal_id')->map(function ($items) {
+            return [
+                'withdrawal' => $items->first()->withdrawal,
+                'items' => $items,
+                'item_count' => $items->count(),
+            ];
+        })->values();
 
         $totalTransactions = $this->countTransactions($startDate, $endDate, $rusunId);
 
@@ -254,17 +262,14 @@ class ReportController extends Controller
             $rusunName = $rusun ? $rusun->name : 'Semua Rusun';
         }
 
-        $pdfItemLimit = self::PDF_ITEMS_PER_ROW;
-
         $pdf = Pdf::loadView('reports.pdf', compact(
-            'transactions',
+            'groupedDetails',
             'startDate',
             'endDate',
             'rusunName',
             'totalTransactions',
             'totalQuantity',
             'totalValue',
-            'pdfItemLimit',
             'detailLimitReached'
         ));
 

@@ -17,7 +17,7 @@
 
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 10px;
+            font-size: 9px;
             color: #000;
             margin: 0;
             padding: 0;
@@ -81,7 +81,7 @@
         .report-table th,
         .report-table td {
             border: 1px solid #000;
-            padding: 6px 5px;
+            padding: 5px 4px;
             vertical-align: middle;
         }
 
@@ -90,75 +90,78 @@
             font-weight: bold;
             text-align: center;
             line-height: 1.2;
+            font-size: 9px;
         }
 
         .report-table td {
-            line-height: 1.25;
+            line-height: 1.3;
         }
 
 
         /* =====================================================
-           LEBAR KOLOM
+           LEBAR KOLOM (8 kolom baru)
         ===================================================== */
 
-        /*
-         * 8 kolom, total 100% dari lebar halaman.
-         * Urutannya sama persis dengan laporan HTML dan CSV.
-         */
         .col-no {
             width: 3%;
         }
 
-        .col-transaksi {
-            width: 6%;
-        }
-
-        .col-taken {
-            width: 13%;
-        }
-
-        .col-date {
+        .col-item-code {
             width: 9%;
         }
 
-        .col-rusun {
+        .col-item-name {
+            width: 24%;
+        }
+
+        .col-taken-by {
+            width: 14%;
+        }
+
+        .col-date {
             width: 10%;
         }
 
-        .col-items {
-            width: 43%;
+        .col-rusun {
+            width: 9%;
         }
 
-        .col-qty {
-            width: 5%;
+        .col-price {
+            width: 15%;
         }
 
         .col-subtotal {
-            width: 11%;
+            width: 13%;
         }
 
-        /*
-         * Thumbnail barang. Sengaja tanpa object-fit karena DomPDF tidak
-         * mendukungnya; ukuran asli dari photoThumbnail() yang dipakai.
-         */
+
+        /* =====================================================
+           ITEM DISPLAY (dengan foto)
+        ===================================================== */
+
+        .item-content {
+            display: table;
+            width: 100%;
+        }
+
+        .item-thumb-cell {
+            display: table-cell;
+            width: 35px;
+            vertical-align: middle;
+        }
+
         .item-thumb {
+            width: 35px;
+            height: 35px;
             border: 1px solid #999;
             vertical-align: middle;
-            margin-right: 6px;
-            display: inline-block;
         }
 
-        .item-row {
-            margin-bottom: 5px;
-            line-height: 1.4;
-        }
-
-        .item-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .more-items {
-            font-style: italic;
+        .item-text-cell {
+            display: table-cell;
+            padding-left: 6px;
+            vertical-align: middle;
+            line-height: 1.35;
         }
 
 
@@ -205,17 +208,13 @@
 
         .summary {
             margin-top: 18px;
-
             padding: 12px 14px;
-
             border: 1px solid #000;
-
             background-color: #f7f7f7;
         }
 
         .summary p {
             margin: 4px 0;
-
             line-height: 1.35;
         }
 
@@ -226,20 +225,15 @@
 
         .footer {
             margin-top: 45px;
-
             width: 100%;
-
             position: relative;
-
             min-height: 115px;
         }
 
         .created-date {
             position: absolute;
-
             left: 0;
             top: 0;
-
             margin: 0;
         }
 
@@ -250,12 +244,9 @@
 
         .signature {
             position: absolute;
-
             right: 0;
             top: 0;
-
             width: 190px;
-
             text-align: center;
         }
 
@@ -269,9 +260,7 @@
 
         .signature-line {
             width: 100%;
-
             border-top: 1px solid #000;
-
             margin: 0;
         }
 
@@ -286,9 +275,7 @@
 
         .empty-data {
             text-align: center;
-
             padding: 25px 10px;
-
             border: 1px solid #000;
         }
 
@@ -298,9 +285,8 @@
         ===================================================== */
 
         @media print {
-
             body {
-                font-size: 10px;
+                font-size: 9px;
             }
 
             .report-table {
@@ -371,18 +357,18 @@
          DATA PENGAMBILAN
     ===================================================== -->
 
-    @if($transactions->count() > 0)
+    @if($groupedDetails->count() > 0)
 
         <table class="report-table">
 
             <colgroup>
                 <col class="col-no">
-                <col class="col-transaksi">
-                <col class="col-taken">
+                <col class="col-item-code">
+                <col class="col-item-name">
+                <col class="col-taken-by">
                 <col class="col-date">
                 <col class="col-rusun">
-                <col class="col-items">
-                <col class="col-qty">
+                <col class="col-price">
                 <col class="col-subtotal">
             </colgroup>
 
@@ -400,7 +386,11 @@
                     </th>
 
                     <th>
-                        No.<br>Transaksi
+                        ID<br>Barang
+                    </th>
+
+                    <th>
+                        Nama Barang
                     </th>
 
                     <th>
@@ -408,7 +398,7 @@
                     </th>
 
                     <th>
-                        Tanggal
+                        Tanggal<br>Ambil
                     </th>
 
                     <th>
@@ -416,11 +406,7 @@
                     </th>
 
                     <th>
-                        Daftar Barang
-                    </th>
-
-                    <th>
-                        Jumlah
+                        Harga Satuan
                     </th>
 
                     <th>
@@ -438,90 +424,91 @@
 
             <tbody>
 
-                @foreach($transactions as $index => $transaction)
+                @php $transactionNumber = 1; @endphp
 
-                    <tr>
+                @foreach($groupedDetails as $group)
 
-                        <!-- NO -->
-                        <td class="no-column">
-                            {{ $index + 1 }}
-                        </td>
+                    @foreach($group['items'] as $index => $detail)
 
+                        <tr>
 
-                        <!-- NO. TRANSAKSI -->
-                        <td class="text-center">
-                            {{ $transaction->withdrawal->id }}
-                        </td>
-
-
-                        <!-- PENGAMBIL -->
-                        <td>
-
-                            {{ $transaction->withdrawal->taken_by ?: '-' }}
-
-                        </td>
-
-
-                        <!-- TANGGAL -->
-                        <td>
-
-                            {{ $transaction->withdrawal->taken_at ? $transaction->withdrawal->taken_at->translatedFormat('d/m/Y') : '-' }}
-
-                            <br>
-
-                            {{ $transaction->withdrawal->taken_at ? $transaction->withdrawal->taken_at->translatedFormat('H:i') : '-' }}
-
-                        </td>
-
-
-                        <!-- RUSUN -->
-                        <td>
-
-                            {{ $transaction->withdrawal->rusun ? $transaction->withdrawal->rusun->name : '-' }}
-
-                        </td>
-
-
-                        <!-- DAFTAR BARANG -->
-                        <td>
-                            @foreach($transaction->lines->take($pdfItemLimit) as $line)
-                                @php $thumb = $line['item']?->photoThumbnail(40); @endphp
-                                <div class="item-row">
-                                    @if($thumb)
-                                        <img src="{{ $thumb['data'] }}" width="{{ $thumb['width'] }}" height="{{ $thumb['height'] }}" alt="" class="item-thumb">
-                                    @endif
-                                    <span>{{ $line['code'] }} - {{ $line['name'] }}
-                                    ({{ number_format($line['quantity'], 0, ',', '.') }} {{ $line['unit'] }}
-                                    @ Rp{{ number_format($line['unit_price'], 0, ',', '.') }})</span>
-                                </div>
-                            @endforeach
-
-                            @if($transaction->item_count > $pdfItemLimit)
-                                <div class="more-items">
-                                    +{{ $transaction->item_count - $pdfItemLimit }} barang lainnya
-                                </div>
+                            <!-- NO (rowspan untuk transaksi yang sama) -->
+                            @if($index == 0)
+                                <td rowspan="{{ $group['item_count'] }}" class="no-column">
+                                    {{ $transactionNumber++ }}
+                                </td>
                             @endif
-                        </td>
 
 
-                        <!-- JUMLAH -->
-                        <td class="text-center">
-
-                            {{ $transaction->total_quantity }}
-
-                        </td>
+                            <!-- ID BARANG -->
+                            <td class="text-center">
+                                <strong>{{ $detail->item?->item_code ?? '-' }}</strong>
+                            </td>
 
 
-                        <!-- SUBTOTAL -->
-                        <td class="text-right">
+                            <!-- NAMA BARANG (dengan foto) -->
+                            <td>
+                                @php $thumb = $detail->item?->photoThumbnail(35); @endphp
+                                <div class="item-content">
+                                    @if($thumb)
+                                        <div class="item-thumb-cell">
+                                            <img src="{{ $thumb['data'] }}" 
+                                                 width="{{ $thumb['width'] }}" 
+                                                 height="{{ $thumb['height'] }}" 
+                                                 alt="" 
+                                                 class="item-thumb">
+                                        </div>
+                                    @endif
+                                    <div class="item-text-cell">
+                                        {{ $detail->item?->name ?? '-' }}
+                                    </div>
+                                </div>
+                            </td>
 
-                            <strong>
-                                Rp{{ number_format($transaction->total_value, 0, ',', '.') }}
-                            </strong>
 
-                        </td>
+                            <!-- PENGAMBIL (rowspan untuk transaksi yang sama) -->
+                            @if($index == 0)
+                                <td rowspan="{{ $group['item_count'] }}">
+                                    {{ $group['withdrawal']?->taken_by ?? '-' }}
+                                </td>
+                            @endif
 
-                    </tr>
+
+                            <!-- TANGGAL AMBIL (rowspan untuk transaksi yang sama) -->
+                            @if($index == 0)
+                                <td rowspan="{{ $group['item_count'] }}" class="text-center">
+                                    {{ $group['withdrawal']?->taken_at ? $group['withdrawal']->taken_at->translatedFormat('d/m/Y') : '-' }}
+                                    <br>
+                                    {{ $group['withdrawal']?->taken_at ? $group['withdrawal']->taken_at->translatedFormat('H:i') : '-' }}
+                                </td>
+                            @endif
+
+
+                            <!-- RUSUN (rowspan untuk transaksi yang sama) -->
+                            @if($index == 0)
+                                <td rowspan="{{ $group['item_count'] }}" class="text-center">
+                                    {{ $group['withdrawal']?->rusun?->name ?? '-' }}
+                                </td>
+                            @endif
+
+
+                            <!-- HARGA SATUAN -->
+                            <td class="text-right">
+                                Rp{{ number_format($detail->unit_price, 0, ',', '.') }}<br>
+                                × {{ number_format($detail->quantity, 0, ',', '.') }} {{ $detail->item?->unit ?? '-' }}
+                            </td>
+
+
+                            <!-- SUBTOTAL -->
+                            <td class="text-right">
+                                <strong>
+                                    Rp{{ number_format($detail->subtotal, 0, ',', '.') }}
+                                </strong>
+                            </td>
+
+                        </tr>
+
+                    @endforeach
 
                 @endforeach
 
@@ -536,30 +523,16 @@
 
                 <tr class="total-row">
 
-                    <!--
-                        Ada 8 kolom.
-
-                        6 kolom pertama (No sampai Daftar Barang)
-                        digabung menjadi label TOTAL.
-
-                        Kolom ke-7 untuk total qty, kolom ke-8 untuk nominal.
-                    -->
-
-                    <th
-                        colspan="6"
-                        class="total-label"
-                    >
+                    <th colspan="6" class="total-label">
                         TOTAL ({{ $totalTransactions }} transaksi)
                     </th>
 
-                    <th class="text-center">
-                        {{ $totalQuantity }}
+                    <th class="text-right">
+                        {{ $totalQuantity }} barang
                     </th>
 
                     <th class="text-right">
-
                         Rp{{ number_format($totalValue, 0, ',', '.') }}
-
                     </th>
 
                 </tr>
